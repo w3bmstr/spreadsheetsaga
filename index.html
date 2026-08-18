@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpreadSheetSaga - Excel Style Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="nav-shell">
+      <div class="nav-upper">
+        <div class="brand-wrap">
+          <div class="brand-badge">SS</div>
+          <div>
+            <h1>SpreadSheetSaga</h1>
+            <p>Professional spreadsheet workspace</p>
+          </div>
+        </div>
+
+        <button id="commandPaletteBtn" class="command-launch" type="button" title="Command Palette (Ctrl+K)">
+          <span>Search commands, tools, and actions</span>
+          <span class="shortcut-hint">Ctrl+K</span>
+        </button>
+
+        <div class="topbar-meta" aria-label="Workspace Status">
+          <span class="meta-pill" id="workbookStatus">Local Session Ready</span>
+          <span class="meta-pill" id="sheetStatus">Sheet 1 | A1</span>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="action-cluster">
+            <button id="importCsvBtn" class="btn ghost" type="button" title="Import CSV">Import CSV</button>
+            <button id="exportCsvBtn" class="btn ghost" type="button" title="Export CSV">Export CSV</button>
+            <button id="loadSavedBtn" class="btn ghost" type="button">Load Saved Session</button>
+          </div>
+          <div class="action-cluster">
+            <button id="resetDataBtn" class="btn ghost" type="button">Reset Saved Data</button>
+          </div>
+          <input id="csvInput" type="file" accept=".csv,text/csv" hidden />
+        </div>
+      </div>
+
+      <div class="nav-ribbon">
+        <div class="ribbon-tab-strip" role="tablist" aria-label="Navigation Tabs">
+          <button class="ribbon-tab active" data-ribbon-tab="home" role="tab" aria-selected="true" type="button">Home</button>
+          <button class="ribbon-tab" data-ribbon-tab="data" role="tab" aria-selected="false" type="button">Data</button>
+          <button class="ribbon-tab" data-ribbon-tab="view" role="tab" aria-selected="false" type="button">View</button>
+          <button class="ribbon-tab" data-ribbon-tab="tools" role="tab" aria-selected="false" type="button">Tools</button>
+        </div>
+
+        <section class="toolbar" id="toolbar" role="toolbar" aria-label="Spreadsheet tools">
+      <div class="tool-group group-history" data-ribbon="home data view tools">
+        <button id="undoBtn" class="btn ghost tool" type="button" title="Undo (Ctrl+Z)">Undo <span class="shortcut-hint">Ctrl+Z</span></button>
+        <button id="redoBtn" class="btn ghost tool" type="button" title="Redo (Ctrl+Y)">Redo <span class="shortcut-hint">Ctrl+Y</span></button>
+      </div>
+
+      <div class="tool-group group-format" data-ribbon="home">
+        <button data-action="bold" id="boldBtn" class="btn tool" type="button" title="Bold (Ctrl+B)"><strong>B</strong></button>
+        <button data-action="italic" id="italicBtn" class="btn tool" type="button" title="Italic (Ctrl+I)"><em>I</em></button>
+        <button data-action="underline" id="underlineBtn" class="btn tool" type="button" title="Underline (Ctrl+U)"><span class="underline">U</span></button>
+        <select id="fontSizeSelect" class="select">
+          <option value="12">12</option>
+          <option value="14" selected>14</option>
+          <option value="16">16</option>
+          <option value="18">18</option>
+          <option value="20">20</option>
+        </select>
+      </div>
+
+      <div class="tool-group group-align" data-ribbon="home">
+        <button data-action="align-left" id="alignLeftBtn" class="btn tool" type="button">Left</button>
+        <button data-action="align-center" id="alignCenterBtn" class="btn tool" type="button">Center</button>
+        <button data-action="align-right" id="alignRightBtn" class="btn tool" type="button">Right</button>
+      </div>
+
+      <div class="tool-group group-colors" data-ribbon="home">
+        <label class="swatch-label">Fill <input id="fillColor" type="color" value="#ffffff" /></label>
+        <label class="swatch-label">Border <input id="borderColor" type="color" value="#cbd5e1" /></label>
+      </div>
+
+      <div class="tool-group group-number" data-ribbon="home data">
+        <select id="numberFormatSelect" class="select">
+          <option value="general">General</option>
+          <option value="currency">Currency</option>
+          <option value="percent">Percent</option>
+          <option value="decimal-0">Decimal (0)</option>
+          <option value="decimal-2">Decimal (2)</option>
+          <option value="decimal-4">Decimal (4)</option>
+        </select>
+      </div>
+
+      <div class="tool-group low-priority group-validation" data-ribbon="data tools">
+        <select id="validationSelect" class="select">
+          <option value="none">Validation: None</option>
+          <option value="number">Validation: Number</option>
+          <option value="integer">Validation: Integer</option>
+          <option value="non-empty">Validation: Non Empty</option>
+          <option value="list">Validation: List</option>
+        </select>
+        <input id="validationListInput" class="text-input" type="text" placeholder="List values: A,B,C" />
+      </div>
+
+      <div class="tool-group low-priority group-sort-filter" data-ribbon="data">
+        <button id="sortAscBtn" class="btn tool" type="button">Sort A-Z</button>
+        <button id="sortDescBtn" class="btn tool" type="button">Sort Z-A</button>
+        <button id="filterBtn" class="btn tool" type="button">Filter</button>
+        <button id="clearFilterBtn" class="btn tool" type="button">Clear Filter</button>
+      </div>
+
+      <div class="tool-group low-priority group-freeze" data-ribbon="view">
+        <label>Freeze Rows <input id="freezeRowsInput" class="small-input" type="number" min="0" value="0" /></label>
+        <label>Freeze Cols <input id="freezeColsInput" class="small-input" type="number" min="0" value="0" /></label>
+      </div>
+
+      <div class="tool-group low-priority group-analysis" data-ribbon="tools">
+        <button id="chartBtn" class="btn tool" type="button">Create Chart</button>
+        <select id="selfFixScopeSelect" class="select" title="Self Fix Scope">
+          <option value="active">Fix: Active Cell</option>
+          <option value="selection">Fix: Selection</option>
+          <option value="sheet" selected>Fix: Whole Sheet</option>
+        </select>
+        <label class="swatch-label" title="Preview changes without writing data">
+          Preview
+          <input id="selfFixPreviewCheckbox" type="checkbox" checked />
+        </label>
+        <button id="selfFixBtn" class="btn tool" type="button">Run Self Fix</button>
+      </div>
+
+      <div class="toolbar-overflow-wrap">
+        <button id="toolbarOverflowBtn" class="btn ghost small" type="button" aria-expanded="false" aria-controls="toolbarOverflowPanel">More Tools</button>
+        <div id="toolbarOverflowPanel" class="toolbar-overflow-panel" hidden>
+          <button class="btn ghost small" type="button" data-command="sort-asc">Sort A-Z</button>
+          <button class="btn ghost small" type="button" data-command="sort-desc">Sort Z-A</button>
+          <button class="btn ghost small" type="button" data-command="filter">Filter</button>
+          <button class="btn ghost small" type="button" data-command="clear-filter">Clear Filter</button>
+          <button class="btn ghost small" type="button" data-command="chart">Create Chart</button>
+          <button class="btn ghost small" type="button" data-command="self-fix">Run Self Fix</button>
+        </div>
+      </div>
+        </section>
+      </div>
+
+      <section class="formula-wrap" aria-label="Formula navigation">
+      <input class="name-box name-input" id="nameBox" type="text" value="A1" spellcheck="false" aria-label="Cell address" />
+      <div class="formula-stack">
+        <div id="formulaHighlight" class="formula-highlight"></div>
+        <input id="formulaInput" class="formula-input" type="text" spellcheck="false" />
+      </div>
+      </section>
+    </header>
+
+    <section class="sheet-controls" aria-label="Sheet navigation">
+      <div class="sheet-controls-main">
+        <div class="sheet-grid-actions">
+          <button id="addRowBtn" class="btn ghost small" type="button">+ Row</button>
+          <button id="deleteRowBtn" class="btn ghost small" type="button">- Row</button>
+          <button id="moveRowUpBtn" class="btn ghost small" type="button">Row Up</button>
+          <button id="moveRowDownBtn" class="btn ghost small" type="button">Row Down</button>
+          <button id="addColBtn" class="btn ghost small" type="button">+ Col</button>
+          <button id="deleteColBtn" class="btn ghost small" type="button">- Col</button>
+          <button id="moveColLeftBtn" class="btn ghost small" type="button">Col Left</button>
+          <button id="moveColRightBtn" class="btn ghost small" type="button">Col Right</button>
+        </div>
+
+        <div class="sheet-navigator">
+          <div class="sheet-tabs" id="sheetTabs" role="tablist" aria-label="Workbook sheets"></div>
+          <button id="sheetMenuBtn" class="btn ghost small" type="button" aria-expanded="false" aria-controls="sheetMenuPanel">All Sheets</button>
+          <button id="addSheetBtn" class="btn" type="button">+ Sheet</button>
+        </div>
+      </div>
+
+      <div id="sheetMenuPanel" class="sheet-menu-panel" role="menu" aria-label="Sheet list" hidden></div>
+    </section>
+
+    <section class="grid-wrap" id="gridWrap">
+      <table id="sheetTable" class="sheet-table"></table>
+      <div id="fillHandle" class="fill-handle" aria-hidden="true"></div>
+    </section>
+  </div>
+
+  <div id="contextMenu" class="context-menu" role="menu" hidden>
+    <button role="menuitem" data-cmd="insert-row" data-command="insert-row">Insert Row</button>
+    <button role="menuitem" data-cmd="delete-row" data-command="delete-row">Delete Row</button>
+    <button role="menuitem" data-cmd="insert-col" data-command="insert-col">Insert Col</button>
+    <button role="menuitem" data-cmd="delete-col" data-command="delete-col">Delete Col</button>
+    <button role="menuitem" data-cmd="clear-cell" data-command="clear-cell">Clear Cell</button>
+  </div>
+
+  <div id="chartModal" class="modal" hidden>
+    <div class="modal-content">
+      <div class="modal-head">
+        <h2>Create Chart</h2>
+        <button id="closeChartModal" class="btn ghost small" type="button">Close</button>
+      </div>
+      <div class="modal-row">
+        <label>Type
+          <select id="chartTypeSelect" class="select">
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+            <option value="pie">Pie</option>
+          </select>
+        </label>
+        <button id="renderChartBtn" class="btn" type="button">Render</button>
+      </div>
+      <canvas id="chartCanvas" width="760" height="300"></canvas>
+    </div>
+  </div>
+
+  <div id="selfFixReportModal" class="modal" hidden>
+    <div class="modal-content self-fix-modal-content">
+      <div class="modal-head">
+        <h2>Self Fix Report</h2>
+        <button id="closeSelfFixReportModal" class="btn ghost small" type="button">Close</button>
+      </div>
+      <div class="self-fix-summary" id="selfFixSummary"></div>
+      <div class="self-fix-grid">
+        <div><strong>Scope:</strong> <span id="selfFixScopeValue"></span></div>
+        <div><strong>Mode:</strong> <span id="selfFixModeValue"></span></div>
+        <div><strong>Scanned Cells:</strong> <span id="selfFixScannedValue"></span></div>
+        <div><strong>Changed Cells:</strong> <span id="selfFixChangedCellsValue"></span></div>
+        <div><strong>Formula Fixes:</strong> <span id="selfFixFormulaValue"></span></div>
+        <div><strong>Value Normalizations:</strong> <span id="selfFixValueValue"></span></div>
+        <div><strong>Validation Fixes:</strong> <span id="selfFixValidationValue"></span></div>
+        <div><strong>Unresolved Formula Errors:</strong> <span id="selfFixUnresolvedFormulaValue"></span></div>
+        <div><strong>Unresolved Validation Errors:</strong> <span id="selfFixUnresolvedValidationValue"></span></div>
+      </div>
+      <h3>Changed Cells Preview</h3>
+      <ul id="selfFixChangedList" class="self-fix-list"></ul>
+    </div>
+  </div>
+
+  <div id="commandPaletteModal" class="modal" hidden>
+    <div class="modal-content command-palette-content" role="dialog" aria-modal="true" aria-labelledby="commandPaletteTitle">
+      <div class="modal-head">
+        <h2 id="commandPaletteTitle">Command Palette</h2>
+        <button id="closeCommandPaletteBtn" class="btn ghost small" type="button">Close</button>
+      </div>
+      <input id="commandPaletteInput" class="text-input command-palette-input" type="text" placeholder="Search commands..." spellcheck="false" />
+      <ul id="commandPaletteList" class="command-palette-list" role="listbox" aria-label="Available commands"></ul>
+    </div>
+  </div>
+
+  <div id="mobileFabDock" class="mobile-fab-dock">
+    <button id="mobileFabMain" class="mobile-fab-main" type="button" aria-expanded="false" aria-controls="mobileFabMenu" aria-label="Open quick actions">+</button>
+    <div id="mobileFabMenu" class="mobile-fab-menu" hidden>
+      <button type="button" data-command="add-row">Add Row</button>
+      <button type="button" data-command="add-col">Add Col</button>
+      <button type="button" data-command="add-sheet">Add Sheet</button>
+      <button type="button" data-command="paste">Paste</button>
+      <button type="button" data-command="self-fix">Self Fix</button>
+    </div>
+  </div>
+
+  <!-- Mobile bottom navigation bar -->
+  <nav class="mobile-bottom-bar" aria-label="Mobile navigation">
+    <button class="mobile-bottom-tab active" id="mobileTabHome" type="button">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </button>
+    <button class="mobile-bottom-tab" id="mobileTabFormat" type="button" data-drawer-toggle="true">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h12"/></svg>
+      Format
+    </button>
+    <button class="mobile-bottom-tab" id="mobileTabData" type="button" data-ribbon-tab-mobile="data">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Data
+    </button>
+    <button class="mobile-bottom-tab" id="mobileTabTools" type="button" data-ribbon-tab-mobile="tools">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      Tools
+    </button>
+  </nav>
+
+  <!-- Mobile toolbar drawer (slide-up) -->
+  <div id="mobileToolbarDrawer" class="mobile-toolbar-drawer" aria-label="Mobile toolbar" role="toolbar">
+    <div class="mobile-toolbar-drawer-handle"></div>
+    <div class="mobile-toolbar-drawer-inner" id="mobileToolbarInner">
+      <!-- JS will clone toolbar tools here for mobile -->
+    </div>
+  </div>
+
+  <div id="liveRegion" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+  <script>
+  (function() {
+    var drawer = document.getElementById('mobileToolbarDrawer');
+    var drawerInner = document.getElementById('mobileToolbarInner');
+    var toolbar = document.getElementById('toolbar');
+    var drawerOpen = false;
+
+    function populateDrawer() {
+      if (drawerInner && drawerInner.children.length) return;
+      if (!toolbar || !drawerInner) return;
+      var clone = toolbar.cloneNode(true);
+      Array.from(clone.children).forEach(function(c) {
+        c.style.display = '';
+        c.style.width = '100%';
+        drawerInner.appendChild(c);
+      });
+    }
+
+    function toggleDrawer(force) {
+      drawerOpen = (force !== undefined) ? force : !drawerOpen;
+      if (drawerOpen) populateDrawer();
+      if (drawer) drawer.classList.toggle('open', drawerOpen);
+      var formatBtn = document.getElementById('mobileTabFormat');
+      if (formatBtn) formatBtn.classList.toggle('active', drawerOpen);
+    }
+
+    var formatTab = document.getElementById('mobileTabFormat');
+    if (formatTab) formatTab.addEventListener('click', function() { toggleDrawer(); });
+
+    document.addEventListener('pointerdown', function(e) {
+      if (drawerOpen && drawer && !drawer.contains(e.target) && !e.target.closest('#mobileTabFormat')) {
+        toggleDrawer(false);
+      }
+    });
+
+    var handle = drawer && drawer.querySelector('.mobile-toolbar-drawer-handle');
+    if (handle) {
+      var startY = 0;
+      handle.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; }, {passive:true});
+      handle.addEventListener('touchend', function(e) {
+        if (e.changedTouches[0].clientY - startY > 40) toggleDrawer(false);
+      }, {passive:true});
+    }
+
+    document.querySelectorAll('[data-ribbon-tab-mobile]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var tab = this.getAttribute('data-ribbon-tab-mobile');
+        var rt = document.querySelector('[data-ribbon-tab="' + tab + '"]');
+        if (rt) rt.click();
+        document.querySelectorAll('.mobile-bottom-tab').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+
+    var homeTab = document.getElementById('mobileTabHome');
+    if (homeTab) {
+      homeTab.addEventListener('click', function() {
+        var rt = document.querySelector('[data-ribbon-tab="home"]');
+        if (rt) rt.click();
+        document.querySelectorAll('.mobile-bottom-tab').forEach(function(b) { b.classList.remove('active'); });
+        homeTab.classList.add('active');
+        toggleDrawer(false);
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
