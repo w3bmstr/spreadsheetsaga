@@ -35,6 +35,7 @@
           <div class="action-cluster">
             <button id="importCsvBtn" class="btn ghost" type="button" title="Import CSV">Import CSV</button>
             <button id="exportCsvBtn" class="btn ghost" type="button" title="Export CSV">Export CSV</button>
+            <button id="saveSessionBtn" class="btn ghost" type="button" title="Save Session (Ctrl+S)">Save Session</button>
             <button id="loadSavedBtn" class="btn ghost" type="button">Load Saved Session</button>
           </div>
           <div class="action-cluster">
@@ -148,8 +149,21 @@
       <input class="name-box name-input" id="nameBox" type="text" value="A1" spellcheck="false" aria-label="Cell address" />
       <div class="formula-stack">
         <div id="formulaHighlight" class="formula-highlight"></div>
-        <input id="formulaInput" class="formula-input" type="text" spellcheck="false" />
+        <input id="formulaInput" class="formula-input" type="text" list="formulaSuggestions" spellcheck="false" />
+        <datalist id="formulaSuggestions"></datalist>
       </div>
+      </section>
+
+      <section class="find-bar" id="findBar" aria-label="Find in workbook" hidden>
+        <span class="find-label">Find</span>
+        <input id="findInput" class="text-input" type="search" placeholder="Search this sheet" spellcheck="false" />
+        <input id="replaceInput" class="text-input replace-input" type="text" placeholder="Replace with" spellcheck="false" />
+        <span id="findCount" class="find-count">0 matches</span>
+        <button id="findPrevBtn" class="btn ghost small" type="button" title="Previous match">Prev</button>
+        <button id="findNextBtn" class="btn ghost small" type="button" title="Next match">Next</button>
+        <button id="replaceBtn" class="btn ghost small" type="button" title="Replace current match">Replace</button>
+        <button id="replaceAllBtn" class="btn ghost small" type="button" title="Replace all matches">Replace All</button>
+        <button id="closeFindBtn" class="btn ghost small" type="button" title="Close find">Close</button>
       </section>
     </header>
 
@@ -180,6 +194,18 @@
       <table id="sheetTable" class="sheet-table"></table>
       <div id="fillHandle" class="fill-handle" aria-hidden="true"></div>
     </section>
+
+    <footer class="workbook-statusbar" aria-label="Workbook status">
+      <span class="statusbar-item statusbar-ready" id="selectionStatus">A1 selected</span>
+      <span class="statusbar-item" id="calculationStatus">Ready</span>
+      <span class="statusbar-spacer"></span>
+      <span class="statusbar-item" id="saveStatus">Saved locally</span>
+      <span class="statusbar-item statusbar-zoom" aria-label="Zoom level">
+        <button id="zoomOutBtn" class="statusbar-zoom-btn" type="button" title="Zoom out">-</button>
+        <span id="zoomValue">100%</span>
+        <button id="zoomInBtn" class="statusbar-zoom-btn" type="button" title="Zoom in">+</button>
+      </span>
+    </footer>
   </div>
 
   <div id="contextMenu" class="context-menu" role="menu" hidden>
@@ -302,6 +328,31 @@
         c.style.display = '';
         c.style.width = '100%';
         drawerInner.appendChild(c);
+
+        c.querySelectorAll('[id]').forEach(function(control) {
+          var controlId = control.id;
+          control.removeAttribute('id');
+          var source = document.getElementById(controlId);
+          if (!source) return;
+          if (!control.matches('button[data-action], button[data-command]')) {
+            control.addEventListener('click', function() { source.click(); });
+          }
+          control.addEventListener('change', function() {
+            if ('checked' in control) source.checked = control.checked;
+            if ('value' in control) source.value = control.value;
+            source.dispatchEvent(new Event('change', { bubbles: true }));
+          });
+        });
+
+        c.querySelectorAll('[data-action], [data-command]').forEach(function(control) {
+          var selector = control.dataset.action
+            ? '[data-action="' + control.dataset.action + '"]'
+            : '[data-command="' + control.dataset.command + '"]';
+          var source = toolbar.querySelector(selector);
+          if (source && source !== control) {
+            control.addEventListener('click', function() { source.click(); });
+          }
+        });
       });
     }
 
@@ -311,6 +362,14 @@
       if (drawer) drawer.classList.toggle('open', drawerOpen);
       var formatBtn = document.getElementById('mobileTabFormat');
       if (formatBtn) formatBtn.classList.toggle('active', drawerOpen);
+    }
+
+    function syncDrawerTab(tab) {
+      if (!drawerInner) return;
+      drawerInner.querySelectorAll('.tool-group[data-ribbon]').forEach(function(group) {
+        var ribbons = String(group.getAttribute('data-ribbon') || 'home').split(/\s+/);
+        group.classList.toggle('ribbon-hidden', ribbons.indexOf(tab) === -1 && ribbons.indexOf('all') === -1);
+      });
     }
 
     var formatTab = document.getElementById('mobileTabFormat');
@@ -336,6 +395,8 @@
         var tab = this.getAttribute('data-ribbon-tab-mobile');
         var rt = document.querySelector('[data-ribbon-tab="' + tab + '"]');
         if (rt) rt.click();
+        toggleDrawer(true);
+        syncDrawerTab(tab);
         document.querySelectorAll('.mobile-bottom-tab').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
       });

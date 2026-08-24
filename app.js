@@ -13,6 +13,10 @@
     history: [],
     future: [],
     chart: null,
+    find: { query: "", matches: [], index: 0 },
+    zoom: 100,
+    clipboardSource: null,
+    clipboardText: "",
     activeRibbonTab: "home",
     commandPaletteIndex: 0,
     touchLongPressTimer: null,
@@ -28,6 +32,7 @@
     sheetTabs: document.getElementById("sheetTabs"),
     nameBox: document.getElementById("nameBox"),
     formulaInput: document.getElementById("formulaInput"),
+    formulaSuggestions: document.getElementById("formulaSuggestions"),
     formulaHighlight: document.getElementById("formulaHighlight"),
     contextMenu: document.getElementById("contextMenu"),
     chartModal: document.getElementById("chartModal"),
@@ -35,6 +40,19 @@
     chartCanvas: document.getElementById("chartCanvas"),
     csvInput: document.getElementById("csvInput"),
     commandPaletteBtn: document.getElementById("commandPaletteBtn"),
+    findBar: document.getElementById("findBar"),
+    findInput: document.getElementById("findInput"),
+    replaceInput: document.getElementById("replaceInput"),
+    findCount: document.getElementById("findCount"),
+    findPrevBtn: document.getElementById("findPrevBtn"),
+    findNextBtn: document.getElementById("findNextBtn"),
+    replaceBtn: document.getElementById("replaceBtn"),
+    replaceAllBtn: document.getElementById("replaceAllBtn"),
+    closeFindBtn: document.getElementById("closeFindBtn"),
+    zoomOutBtn: document.getElementById("zoomOutBtn"),
+    zoomInBtn: document.getElementById("zoomInBtn"),
+    zoomValue: document.getElementById("zoomValue"),
+    saveSessionBtn: document.getElementById("saveSessionBtn"),
     loadSavedBtn: document.getElementById("loadSavedBtn"),
     resetDataBtn: document.getElementById("resetDataBtn"),
     workbookStatus: document.getElementById("workbookStatus"),
@@ -66,7 +84,10 @@
     mobileFabDock: document.getElementById("mobileFabDock"),
     mobileFabMain: document.getElementById("mobileFabMain"),
     mobileFabMenu: document.getElementById("mobileFabMenu"),
-    liveRegion: document.getElementById("liveRegion")
+    liveRegion: document.getElementById("liveRegion"),
+    selectionStatus: document.getElementById("selectionStatus"),
+    calculationStatus: document.getElementById("calculationStatus"),
+    saveStatus: document.getElementById("saveStatus")
   };
 
   const COMMANDS = {
@@ -74,6 +95,24 @@
       label: "Command Palette",
       shortcut: "Ctrl+K",
       run: () => openCommandPalette()
+    },
+    find: {
+      label: "Find in Sheet",
+      shortcut: "Ctrl+F",
+      run: () => openFindBar()
+    },
+    "zoom-in": {
+      label: "Zoom In",
+      run: () => setZoom(state.zoom + 10)
+    },
+    "zoom-out": {
+      label: "Zoom Out",
+      run: () => setZoom(state.zoom - 10)
+    },
+    "zoom-reset": {
+      label: "Reset Zoom",
+      shortcut: "100%",
+      run: () => setZoom(100 - state.zoom)
     },
     "tab-home": {
       label: "Ribbon Tab: Home",
@@ -114,6 +153,11 @@
     "export-csv": {
       label: "Export CSV",
       run: () => exportCsv()
+    },
+    "save-session": {
+      label: "Save Session",
+      shortcut: "Ctrl+S",
+      run: () => saveSession()
     },
     "load-saved": {
       label: "Load Saved Session",
@@ -477,6 +521,22 @@
         const vals = flatten(args).map((v) => normalizeValue(v));
         return vals.length ? Math.max(...vals) : 0;
       },
+      ROUND: (value, digits = 0) => {
+        const factor = 10 ** Number(digits || 0);
+        return Math.round(normalizeValue(value) * factor) / factor;
+      },
+      SUMIF: (range, criterion, sumRange = range) => {
+        const criteria = String(criterion);
+        const values = flatten(range);
+        const sums = flatten(sumRange);
+        return values.reduce((total, value, index) => {
+          return String(value) === criteria ? total + normalizeValue(sums[index]) : total;
+        }, 0);
+      },
+      COUNTIF: (range, criterion) => flatten(range)
+        .filter((value) => String(value) === String(criterion)).length,
+      AND: (...args) => flatten(args).every(Boolean),
+      OR: (...args) => flatten(args).some(Boolean),
       CONCAT: (...args) => flatten(args).join(""),
       INDEX: (range, rowNum, colNum = 1) => {
         const matrix = toMatrix(range);
@@ -542,9 +602,9 @@
     expr = expr.toUpperCase();
 
     expr = expr.replace(/([A-Z]+\d+):([A-Z]+\d+)/g, "RANGE('$1','$2')");
-    expr = expr.replace(/\b([A-Z]+\d+)\b/g, "CELL('$1')");
+    expr = expr.replace(/(?<!['"])(\b[A-Z]+\d+\b)(?!['"])/g, "CELL('$1')");
 
-    const fnNames = ["SUM", "AVERAGE", "COUNT", "IF", "VLOOKUP", "HLOOKUP", "INDEX", "MATCH", "CONCAT", "MIN", "MAX"];
+    const fnNames = ["CELL", "RANGE", "SUM", "AVERAGE", "COUNT", "IF", "VLOOKUP", "HLOOKUP", "INDEX", "MATCH", "CONCAT", "MIN", "MAX", "ROUND", "SUMIF", "COUNTIF", "AND", "OR"];
     fnNames.forEach((fn) => {
       const re = new RegExp(`\\b${fn}\\(`, "g");
       expr = expr.replace(re, `helpers.${fn}(`);
@@ -716,6 +776,9 @@
         if (state.activeCell.row === r && state.activeCell.col === c) {
           td.classList.add("active");
         }
+        if (state.find.matches.some((match) => match.sheetId === sheet.id && match.row === r && match.col === c)) {
+          td.classList.add("find-match");
+        }
 
         td.setAttribute("aria-selected", inRange(r, c, state.selection) ? "true" : "false");
         td.setAttribute("aria-invalid", cell.invalid ? "true" : "false");
@@ -816,9 +879,26 @@
       .replaceAll(">", "&gt;");
 
     let html = escaped;
-    html = html.replace(/\b(SUM|AVERAGE|COUNT|IF|VLOOKUP|HLOOKUP|INDEX|MATCH|CONCAT|MIN|MAX)\b/gi, "<span class=\"fx\">$1</span>");
+    html = html.replace(/\b(SUM|AVERAGE|COUNT|IF|VLOOKUP|HLOOKUP|INDEX|MATCH|CONCAT|MIN|MAX|ROUND|SUMIF|COUNTIF|AND|OR)\b/gi, "<span class=\"fx\">$1</span>");
     html = html.replace(/\b([A-Z]+\d+)(?::([A-Z]+\d+))?\b/g, "<span class=\"ref\">$&</span>");
     ui.formulaHighlight.innerHTML = html || " ";
+  }
+
+  function updateFormulaSuggestions(raw) {
+    if (!ui.formulaSuggestions) {
+      return;
+    }
+    const functions = ["SUM", "AVERAGE", "COUNT", "IF", "VLOOKUP", "HLOOKUP", "INDEX", "MATCH", "CONCAT", "MIN", "MAX", "ROUND", "SUMIF", "COUNTIF", "AND", "OR"];
+    const query = String(raw || "").toUpperCase();
+    const token = query.match(/(?:^|[=(,\s])([A-Z]*)$/)?.[1] || "";
+    ui.formulaSuggestions.innerHTML = "";
+    functions
+      .filter((name) => !token || name.startsWith(token))
+      .forEach((name) => {
+        const option = document.createElement("option");
+        option.value = `${name}(`;
+        ui.formulaSuggestions.appendChild(option);
+      });
   }
 
   function syncFormulaBar() {
@@ -845,6 +925,153 @@
     if (ui.sheetStatus) {
       ui.sheetStatus.textContent = `${sheet.name} | ${toAddress(state.activeCell.row, state.activeCell.col)}`;
     }
+
+    const { minR, maxR, minC, maxC } = rangeBounds();
+    const selectedCount = (maxR - minR + 1) * (maxC - minC + 1);
+    const addresses = minR === maxR && minC === maxC
+      ? toAddress(minR, minC)
+      : `${toAddress(minR, minC)}:${toAddress(maxR, maxC)}`;
+    if (ui.selectionStatus) {
+      ui.selectionStatus.textContent = `${addresses} | ${selectedCount} selected`;
+    }
+
+    let numericCount = 0;
+    let numericSum = 0;
+    selectedCells((cell) => {
+      const number = Number(cell.computed);
+      if (cell.computed !== "" && Number.isFinite(number)) {
+        numericCount += 1;
+        numericSum += number;
+      }
+    });
+    if (ui.calculationStatus) {
+      ui.calculationStatus.textContent = numericCount
+        ? `Sum ${numericSum.toLocaleString(undefined, { maximumFractionDigits: 2 })} | ${numericCount} numbers`
+        : "Ready";
+    }
+  }
+
+  function updateFindCount() {
+    if (!ui.findCount) {
+      return;
+    }
+    const total = state.find.matches.length;
+    ui.findCount.textContent = total
+      ? `${state.find.index + 1} of ${total}`
+      : "0 matches";
+  }
+
+  function refreshFindMatches() {
+    const query = String(ui.findInput?.value || "").trim().toLowerCase();
+    state.find.query = query;
+    state.find.matches = [];
+    state.find.index = 0;
+
+    if (query) {
+      state.sheets.forEach((sheet) => {
+        for (let row = 0; row < sheet.rows; row += 1) {
+          for (let col = 0; col < sheet.cols; col += 1) {
+            const cell = sheet.data[row][col];
+            const text = `${cell.raw} ${cell.computed}`.toLowerCase();
+            if (text.includes(query)) {
+              state.find.matches.push({ sheetId: sheet.id, row, col });
+            }
+          }
+        }
+      });
+    }
+
+    updateFindCount();
+    renderGrid();
+  }
+
+  function moveFindMatch(direction) {
+    const total = state.find.matches.length;
+    if (!total) {
+      return;
+    }
+    state.find.index = (state.find.index + direction + total) % total;
+    const match = state.find.matches[state.find.index];
+    if (match.sheetId !== state.activeSheetId) {
+      setActiveSheet(match.sheetId);
+    }
+    setSelection(match.row, match.col, match.row, match.col, { render: false });
+    updateFindCount();
+    ui.table.querySelector(`td[data-row='${match.row}'][data-col='${match.col}']`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+
+  function openFindBar() {
+    if (!ui.findBar) {
+      return;
+    }
+    ui.findBar.hidden = false;
+    ui.findInput?.focus();
+    ui.findInput?.select();
+    refreshFindMatches();
+  }
+
+  function closeFindBar() {
+    if (!ui.findBar) {
+      return;
+    }
+    ui.findBar.hidden = true;
+    state.find.query = "";
+    state.find.matches = [];
+    state.find.index = 0;
+    renderGrid();
+  }
+
+  function setZoom(nextZoom) {
+    state.zoom = Math.max(70, Math.min(150, Number(nextZoom) || 100));
+    ui.gridWrap.style.zoom = `${state.zoom / 100}`;
+    if (ui.zoomValue) {
+      ui.zoomValue.textContent = `${state.zoom}%`;
+    }
+  }
+
+  function replaceCurrentMatch() {
+    const match = state.find.matches[state.find.index];
+    if (!match) {
+      return;
+    }
+    const sheet = state.sheets.find((item) => item.id === match.sheetId);
+    if (!sheet) {
+      return;
+    }
+    const query = state.find.query;
+    const replacement = String(ui.replaceInput?.value || "");
+    const cell = sheet.data[match.row][match.col];
+    pushHistory();
+    cell.raw = cell.raw.replace(new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), replacement);
+    recalcSheet(sheet);
+    setActiveSheet(sheet.id);
+    refreshFindMatches();
+  }
+
+  function replaceAllMatches() {
+    const query = state.find.query;
+    if (!query) {
+      return;
+    }
+    const replacement = String(ui.replaceInput?.value || "");
+    const pattern = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    pushHistory();
+    let changed = 0;
+    state.sheets.forEach((sheet) => {
+      sheet.data.forEach((row) => row.forEach((cell) => {
+        const next = cell.raw.replace(pattern, replacement);
+        if (next !== cell.raw) {
+          cell.raw = next;
+          changed += 1;
+        }
+      }));
+      recalcSheet(sheet);
+    });
+    if (changed) {
+      renderAll();
+    }
+    refreshFindMatches();
+    announce(`${changed} cells replaced`);
   }
 
   function setRibbonTab(tabId, options = {}) {
@@ -1111,9 +1338,17 @@
         activeCell: { ...state.activeCell }
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      if (ui.saveStatus) {
+        ui.saveStatus.textContent = `Saved ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+      }
     } catch {
       // Ignore storage failures to keep editing uninterrupted.
     }
+  }
+
+  function saveSession() {
+    persistState();
+    announce("Session saved");
   }
 
   function normalizeLoadedCell(cell) {
@@ -1325,6 +1560,7 @@
       }
     });
     renderGrid();
+    updateToolbarState();
   }
 
   function applyValidation(type, listText) {
@@ -1496,20 +1732,39 @@
       }
       rows.push(cols.join("\t"));
     }
-    return rows.join("\n");
+    const tsv = rows.join("\n");
+    state.clipboardSource = { row: minR, col: minC };
+    state.clipboardText = tsv;
+    return tsv;
+  }
+
+  function translateFormulaReferences(raw, rowOffset, colOffset) {
+    if (!String(raw).startsWith("=") || (!rowOffset && !colOffset)) {
+      return raw;
+    }
+    return String(raw).replace(/(\$?)([A-Z]+)(\$?)(\d+)/gi, (match, colLock, colName, rowLock, rowNumber) => {
+      const col = nameToCol(colName);
+      const row = Number(rowNumber) - 1;
+      const nextCol = colLock ? col : Math.max(0, col + colOffset);
+      const nextRow = rowLock ? row : Math.max(0, row + rowOffset);
+      return `${colLock}${colToName(nextCol)}${rowLock}${nextRow + 1}`;
+    });
   }
 
   function pasteTSV(tsv) {
     const sheet = activeSheet();
     pushHistory();
     const rows = tsv.replace(/\r/g, "").split("\n");
+    const source = state.clipboardText === tsv ? state.clipboardSource : null;
+    const rowOffset = source ? state.activeCell.row - source.row : 0;
+    const colOffset = source ? state.activeCell.col - source.col : 0;
     rows.forEach((rowText, rOff) => {
       const cols = rowText.split("\t");
       cols.forEach((value, cOff) => {
         const r = state.activeCell.row + rOff;
         const c = state.activeCell.col + cOff;
         if (r < sheet.rows && c < sheet.cols) {
-          commitCell(r, c, value);
+          commitCell(r, c, translateFormulaReferences(value, rowOffset, colOffset));
         }
       });
     });
@@ -1658,7 +1913,7 @@
     let changed = false;
 
     if (!next.startsWith("=")) {
-      const looksLikeFormula = /^(SUM|AVERAGE|COUNT|IF|VLOOKUP|HLOOKUP|INDEX|MATCH|CONCAT|MIN|MAX)\s*\(/i.test(next)
+      const looksLikeFormula = /^(SUM|AVERAGE|COUNT|IF|VLOOKUP|HLOOKUP|INDEX|MATCH|CONCAT|MIN|MAX|ROUND|SUMIF|COUNTIF|AND|OR)\s*\(/i.test(next)
         || /^[A-Z]+\d+\s*[+\-*/]/i.test(next);
       if (looksLikeFormula) {
         next = `=${next}`;
@@ -2250,7 +2505,8 @@
   function applyFillDrag(endRow, endCol) {
     const sheet = activeSheet();
     pushHistory();
-    const { minR, maxR, minC, maxC } = rangeBounds();
+    const sourceRange = state.fillDrag?.sourceRange || rangeBounds();
+    const { minR, maxR, minC, maxC } = sourceRange;
     const sourceRows = maxR - minR + 1;
     const sourceCols = maxC - minC + 1;
 
@@ -2268,7 +2524,7 @@
         const srcC = minC + ((c - minC) % sourceCols + sourceCols) % sourceCols;
         const src = sheet.data[srcR][srcC];
         const dst = sheet.data[r][c];
-        dst.raw = src.raw;
+        dst.raw = translateFormulaReferences(src.raw, r - srcR, c - srcC);
         dst.style = { ...src.style };
         dst.numberFormat = src.numberFormat;
         dst.validation = { ...src.validation, list: [...src.validation.list] };
@@ -2282,8 +2538,11 @@
   function bindFillHandleEvents() {
     ui.fillHandle.addEventListener("mousedown", (e) => {
       e.preventDefault();
-      const { maxR, maxC } = rangeBounds();
-      state.fillDrag = { startRow: maxR, startCol: maxC, endRow: maxR, endCol: maxC };
+      state.fillDrag = {
+        sourceRange: rangeBounds(),
+        endRow: rangeBounds().maxR,
+        endCol: rangeBounds().maxC
+      };
     });
 
     ui.gridWrap.addEventListener("mousemove", (e) => {
@@ -2384,6 +2643,24 @@
     document.getElementById("undoBtn").addEventListener("click", () => executeCommand("undo"));
     document.getElementById("redoBtn").addEventListener("click", () => executeCommand("redo"));
     ui.commandPaletteBtn.addEventListener("click", () => executeCommand("command-palette"));
+    ui.findInput?.addEventListener("input", refreshFindMatches);
+    ui.replaceBtn?.addEventListener("click", replaceCurrentMatch);
+    ui.replaceAllBtn?.addEventListener("click", replaceAllMatches);
+    ui.findInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        moveFindMatch(e.shiftKey ? -1 : 1);
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeFindBar();
+      }
+    });
+    ui.findPrevBtn?.addEventListener("click", () => moveFindMatch(-1));
+    ui.findNextBtn?.addEventListener("click", () => moveFindMatch(1));
+    ui.closeFindBtn?.addEventListener("click", closeFindBar);
+    ui.zoomOutBtn?.addEventListener("click", () => executeCommand("zoom-out"));
+    ui.zoomInBtn?.addEventListener("click", () => executeCommand("zoom-in"));
 
     document.getElementById("addSheetBtn").addEventListener("click", () => executeCommand("add-sheet"));
 
@@ -2396,6 +2673,7 @@
       e.target.value = "";
     });
     document.getElementById("exportCsvBtn").addEventListener("click", () => executeCommand("export-csv"));
+    ui.saveSessionBtn?.addEventListener("click", () => executeCommand("save-session"));
 
     document.getElementById("chartBtn").addEventListener("click", () => executeCommand("chart"));
     document.getElementById("selfFixBtn").addEventListener("click", () => executeCommand("self-fix"));
@@ -2496,6 +2774,7 @@
 
     ui.formulaInput.addEventListener("input", (e) => {
       highlightFormula(e.target.value);
+      updateFormulaSuggestions(e.target.value);
     });
 
     ui.formulaInput.addEventListener("keydown", (e) => {
@@ -2518,6 +2797,11 @@
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         executeCommand("command-palette", { silent: true });
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        executeCommand("find", { silent: true });
         return;
       }
 
@@ -2548,6 +2832,7 @@
         hideContextMenu();
         hideTransientPanels();
         closeCommandPalette();
+        closeFindBar();
       }
 
       if (e.target === ui.formulaInput || e.target === ui.commandPaletteInput) {
@@ -2563,6 +2848,11 @@
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
         e.preventDefault();
         executeCommand("redo", { silent: true });
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        executeCommand("save-session", { silent: true });
         return;
       }
 
@@ -2623,6 +2913,7 @@
     bindTableEvents();
     bindFillHandleEvents();
     bindToolbar();
+    setZoom(state.zoom);
     setRibbonTab(state.activeRibbonTab, { silent: true });
 
     window.addEventListener("resize", refreshResponsiveNav);
