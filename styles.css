@@ -1787,3 +1787,30 @@ body {
     transition: none;
   }
 }
+
+
+/* Production polish additions */
+.status-dirty {
+  color: #b45309 !important;
+  font-weight: 700;
+}
+
+.self-fix-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.sheet-table td.invalid {
+  background: #fff1f2 !important;
+}
+
+/* Better focus for accessibility */
+.sheet-table td:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: -2px;
+  z-index: 5;
+}
+
+/* Smooth status transitions */
+.statusbar-item {
+  transition: color 180ms ease;
+}

@@ -22,7 +22,10 @@
     touchLongPressTimer: null,
     touchStartTs: 0,
     touchLongPressTriggered: false,
-    touchWasTwoFinger: false
+    touchWasTwoFinger: false,
+    autoSaveTimer: null,
+    lastSavedAt: null,
+    dirty: false
   };
 
   const ui = {
@@ -74,6 +77,8 @@
     selfFixFormulaValue: document.getElementById("selfFixFormulaValue"),
     selfFixValueValue: document.getElementById("selfFixValueValue"),
     selfFixValidationValue: document.getElementById("selfFixValidationValue"),
+    selfFixConsistencyValue: document.getElementById("selfFixConsistencyValue"),
+    selfFixPatternValue: document.getElementById("selfFixPatternValue"),
     selfFixUnresolvedFormulaValue: document.getElementById("selfFixUnresolvedFormulaValue"),
     selfFixUnresolvedValidationValue: document.getElementById("selfFixUnresolvedValidationValue"),
     selfFixChangedList: document.getElementById("selfFixChangedList"),
@@ -407,6 +412,7 @@
       state.history.shift();
     }
     state.future = [];
+    scheduleAutoSave();
   }
 
   function restoreSnapshot(serialized) {
@@ -512,7 +518,14 @@
         return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
       },
       COUNT: (...args) => flatten(args).filter((v) => Number.isFinite(Number(v))).length,
+      COUNTA: (...args) => flatten(args).filter((v) => String(v ?? "").trim() !== "").length,
       IF: (cond, a, b) => (cond ? a : b),
+      IFERROR: (value, fallback) => {
+        if (value === null || value === undefined) return fallback;
+        const s = String(value);
+        if (s.startsWith("#")) return fallback;
+        return value;
+      },
       MIN: (...args) => {
         const vals = flatten(args).map((v) => normalizeValue(v));
         return vals.length ? Math.min(...vals) : 0;
@@ -524,6 +537,17 @@
       ROUND: (value, digits = 0) => {
         const factor = 10 ** Number(digits || 0);
         return Math.round(normalizeValue(value) * factor) / factor;
+      },
+      ABS: (value) => Math.abs(normalizeValue(value)),
+      POWER: (base, exp) => Math.pow(normalizeValue(base), normalizeValue(exp)),
+      SQRT: (value) => {
+        const n = normalizeValue(value);
+        return n < 0 ? "#NUM!" : Math.sqrt(n);
+      },
+      MOD: (num, divisor) => {
+        const d = normalizeValue(divisor);
+        if (d === 0) return "#DIV/0!";
+        return normalizeValue(num) % d;
       },
       SUMIF: (range, criterion, sumRange = range) => {
         const criteria = String(criterion);
@@ -537,7 +561,86 @@
         .filter((value) => String(value) === String(criterion)).length,
       AND: (...args) => flatten(args).every(Boolean),
       OR: (...args) => flatten(args).some(Boolean),
+      NOT: (v) => !v,
+      TRUE: () => true,
+      FALSE: () => false,
       CONCAT: (...args) => flatten(args).join(""),
+      CONCATENATE: (...args) => flatten(args).join(""),
+      LEFT: (text, num = 1) => String(text ?? "").slice(0, Math.max(0, Number(num) || 0)),
+      RIGHT: (text, num = 1) => String(text ?? "").slice(-Math.max(0, Number(num) || 0)),
+      MID: (text, start, num) => {
+        const s = Math.max(1, Number(start) || 1) - 1;
+        return String(text ?? "").substr(s, Math.max(0, Number(num) || 0));
+      },
+      LEN: (text) => String(text ?? "").length,
+      TRIM: (text) => String(text ?? "").replace(/\s+/g, " ").trim(),
+      UPPER: (text) => String(text ?? "").toUpperCase(),
+      LOWER: (text) => String(text ?? "").toLowerCase(),
+      PROPER: (text) => String(text ?? "").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()),
+      SUBSTITUTE: (text, oldText, newText, instance) => {
+        const t = String(text ?? "");
+        const o = String(oldText ?? "");
+        const n = String(newText ?? "");
+        if (!o) return t;
+        if (instance == null || instance === "") {
+          return t.split(o).join(n);
+        }
+        let count = 0;
+        const idx = Number(instance);
+        return t.replace(new RegExp(o.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), (m) => {
+          count += 1;
+          return count === idx ? n : m;
+        });
+      },
+      FIND: (findText, withinText, start = 1) => {
+        const pos = String(withinText ?? "").indexOf(String(findText ?? ""), Math.max(0, Number(start) - 1));
+        return pos >= 0 ? pos + 1 : "#VALUE!";
+      },
+      SEARCH: (findText, withinText, start = 1) => {
+        const pos = String(withinText ?? "").toLowerCase().indexOf(String(findText ?? "").toLowerCase(), Math.max(0, Number(start) - 1));
+        return pos >= 0 ? pos + 1 : "#VALUE!";
+      },
+      VALUE: (text) => {
+        const n = Number(String(text ?? "").replace(/,/g, ""));
+        return Number.isFinite(n) ? n : "#VALUE!";
+      },
+      TEXT: (value, format) => {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return String(value ?? "");
+        const f = String(format || "0").toUpperCase();
+        if (f.includes("%")) return `${(n * 100).toFixed(2)}%`;
+        if (f.includes("$") || f.includes("USD")) {
+          return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(n);
+        }
+        const decimals = (f.match(/0/g) || []).length > 1 ? (f.split(".")[1] || "").length : 0;
+        return n.toFixed(decimals);
+      },
+      ISNUMBER: (v) => Number.isFinite(Number(v)),
+      ISTEXT: (v) => typeof v === "string" && !Number.isFinite(Number(v)),
+      ISBLANK: (v) => v === "" || v == null,
+      N: (v) => Number.isFinite(Number(v)) ? Number(v) : 0,
+      T: (v) => typeof v === "string" ? v : "",
+      TODAY: () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      },
+      NOW: () => new Date().toISOString().slice(0, 19).replace("T", " "),
+      YEAR: (dateVal) => {
+        const d = new Date(dateVal);
+        return Number.isNaN(d.getTime()) ? "#VALUE!" : d.getFullYear();
+      },
+      MONTH: (dateVal) => {
+        const d = new Date(dateVal);
+        return Number.isNaN(d.getTime()) ? "#VALUE!" : d.getMonth() + 1;
+      },
+      DAY: (dateVal) => {
+        const d = new Date(dateVal);
+        return Number.isNaN(d.getTime()) ? "#VALUE!" : d.getDate();
+      },
+      DATE: (y, m, d) => {
+        const dt = new Date(Number(y), Number(m) - 1, Number(d));
+        return Number.isNaN(dt.getTime()) ? "#VALUE!" : `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+      },
       INDEX: (range, rowNum, colNum = 1) => {
         const matrix = toMatrix(range);
         const r = Number(rowNum) - 1;
@@ -556,16 +659,16 @@
             return matrix[i][Number(colIndex) - 1] ?? "";
           }
         }
-        return "";
+        return "#N/A";
       },
       HLOOKUP: (lookup, range, rowIndex) => {
         const matrix = toMatrix(range);
         const firstRow = matrix[0] || [];
         const col = firstRow.findIndex((v) => String(v) === String(lookup));
         if (col < 0) {
-          return "";
+          return "#N/A";
         }
-        return matrix[Number(rowIndex) - 1]?.[col] ?? "";
+        return matrix[Number(rowIndex) - 1]?.[col] ?? "#N/A";
       }
     };
     return helpers;
@@ -604,7 +707,7 @@
     expr = expr.replace(/([A-Z]+\d+):([A-Z]+\d+)/g, "RANGE('$1','$2')");
     expr = expr.replace(/(?<!['"])(\b[A-Z]+\d+\b)(?!['"])/g, "CELL('$1')");
 
-    const fnNames = ["CELL", "RANGE", "SUM", "AVERAGE", "COUNT", "IF", "VLOOKUP", "HLOOKUP", "INDEX", "MATCH", "CONCAT", "MIN", "MAX", "ROUND", "SUMIF", "COUNTIF", "AND", "OR"];
+    const fnNames = ["CELL", "RANGE", "SUM", "AVERAGE", "COUNT", "COUNTA", "IF", "IFERROR", "VLOOKUP", "HLOOKUP", "INDEX", "MATCH", "CONCAT", "CONCATENATE", "MIN", "MAX", "ROUND", "ABS", "POWER", "SQRT", "MOD", "SUMIF", "COUNTIF", "AND", "OR", "NOT", "TRUE", "FALSE", "LEFT", "RIGHT", "MID", "LEN", "TRIM", "UPPER", "LOWER", "PROPER", "SUBSTITUTE", "FIND", "SEARCH", "VALUE", "TEXT", "ISNUMBER", "ISTEXT", "ISBLANK", "N", "T", "TODAY", "NOW", "YEAR", "MONTH", "DAY", "DATE"];
     fnNames.forEach((fn) => {
       const re = new RegExp(`\\b${fn}\\(`, "g");
       expr = expr.replace(re, `helpers.${fn}(`);
@@ -945,9 +1048,12 @@
       }
     });
     if (ui.calculationStatus) {
-      ui.calculationStatus.textContent = numericCount
-        ? `Sum ${numericSum.toLocaleString(undefined, { maximumFractionDigits: 2 })} | ${numericCount} numbers`
-        : "Ready";
+      if (numericCount) {
+        const avg = numericSum / numericCount;
+        ui.calculationStatus.textContent = `Sum ${numericSum.toLocaleString(undefined, { maximumFractionDigits: 2 })} | Avg ${avg.toLocaleString(undefined, { maximumFractionDigits: 2 })} | ${numericCount} nums`;
+      } else {
+        ui.calculationStatus.textContent = "Ready";
+      }
     }
   }
 
@@ -1348,7 +1454,35 @@
 
   function saveSession() {
     persistState();
+    state.dirty = false;
+    state.lastSavedAt = Date.now();
+    if (ui.saveStatus) {
+      ui.saveStatus.textContent = "Saved locally";
+      ui.saveStatus.classList.remove("status-dirty");
+    }
     announce("Session saved");
+  }
+
+  function scheduleAutoSave() {
+    state.dirty = true;
+    if (ui.saveStatus) {
+      ui.saveStatus.textContent = "Unsaved changes";
+      ui.saveStatus.classList.add("status-dirty");
+    }
+    if (state.autoSaveTimer) clearTimeout(state.autoSaveTimer);
+    state.autoSaveTimer = setTimeout(() => {
+      try {
+        persistState();
+        state.dirty = false;
+        state.lastSavedAt = Date.now();
+        if (ui.saveStatus) {
+          ui.saveStatus.textContent = "Autosaved";
+          ui.saveStatus.classList.remove("status-dirty");
+        }
+      } catch (e) {
+        console.warn("Autosave failed", e);
+      }
+    }, 2500);
   }
 
   function normalizeLoadedCell(cell) {
@@ -1528,12 +1662,28 @@
   function commitCell(row, col, newRaw) {
     const sheet = activeSheet();
     const cell = sheet.data[row][col];
-    if (!validateCell(cell, newRaw)) {
+    let value = String(newRaw ?? "");
+
+    // Lightweight live self-heal on formula entry
+    if (value.startsWith("=") || /^(SUM|AVERAGE|COUNT|IF|VLOOKUP|MIN|MAX)\s*\(/i.test(value)) {
+      const fixed = maybeFixFormula(value);
+      if (fixed.changed) {
+        value = fixed.value;
+      }
+    } else {
+      const fixedVal = maybeFixRawValue(value);
+      if (fixedVal.changed) {
+        value = fixedVal.value;
+      }
+    }
+
+    if (!validateCell(cell, value)) {
       cell.invalid = true;
+      cell.raw = value; // still store so user sees what they typed after fix attempt
       return false;
     }
     cell.invalid = false;
-    cell.raw = newRaw;
+    cell.raw = value;
     recalcSheet(sheet);
     return true;
   }
@@ -1909,12 +2059,26 @@
   }
 
   function maybeFixFormula(raw) {
-    let next = String(raw);
+    let next = String(raw ?? "");
     let changed = false;
 
+    // Common function typos / aliases
+    const TYPO_MAP = {
+      SUMM: "SUM", SUMIFA: "SUMIF", AVG: "AVERAGE", AVERAG: "AVERAGE",
+      COUNTT: "COUNT", COUNTAA: "COUNTA", MINN: "MIN", MAXX: "MAX",
+      VLOOOKUP: "VLOOKUP", VLOOK: "VLOOKUP", HLOOOKUP: "HLOOKUP",
+      CONCATE: "CONCAT", CONCATINATE: "CONCATENATE", IFF: "IF",
+      IFERR: "IFERROR", ROUDN: "ROUND", SQRTT: "SQRT", ABSS: "ABS",
+      LENTH: "LEN", LENGHT: "LEN", TRIMMM: "TRIM", UPPR: "UPPER",
+      LOWR: "LOWER", PROPPER: "PROPER", SUBSTITUE: "SUBSTITUTE",
+      VALEU: "VALUE", ISNUM: "ISNUMBER", ISTXT: "ISTEXT",
+      TODA: "TODAY", DAT: "DATE"
+    };
+
     if (!next.startsWith("=")) {
-      const looksLikeFormula = /^(SUM|AVERAGE|COUNT|IF|VLOOKUP|HLOOKUP|INDEX|MATCH|CONCAT|MIN|MAX|ROUND|SUMIF|COUNTIF|AND|OR)\s*\(/i.test(next)
-        || /^[A-Z]+\d+\s*[+\-*/]/i.test(next);
+      const looksLikeFormula = /^(SUM|AVERAGE|COUNT|COUNTA|IF|IFERROR|VLOOKUP|HLOOKUP|INDEX|MATCH|CONCAT|CONCATENATE|MIN|MAX|ROUND|ABS|POWER|SQRT|MOD|SUMIF|COUNTIF|AND|OR|NOT|LEFT|RIGHT|MID|LEN|TRIM|UPPER|LOWER|PROPER|SUBSTITUTE|FIND|SEARCH|VALUE|TEXT|ISNUMBER|ISTEXT|ISBLANK|TODAY|NOW|YEAR|MONTH|DAY|DATE)\s*\(/i.test(next)
+        || /^[A-Z]+\d+\s*[+\-*/^]/i.test(next)
+        || /^\s*[A-Z]+\s*\(/i.test(next);
       if (looksLikeFormula) {
         next = `=${next}`;
         changed = true;
@@ -1925,7 +2089,8 @@
       return { value: next, changed };
     }
 
-    const normalized = next
+    // Normalize smart quotes and European argument separators
+    let normalized = next
       .replace(/[\u2018\u2019]/g, "'")
       .replace(/[\u201C\u201D]/g, '"')
       .replace(/;/g, ",");
@@ -1934,18 +2099,38 @@
       changed = true;
     }
 
+    // Fix function name typos (case-insensitive match on known aliases)
+    next = next.replace(/\b([A-Z]{2,})\s*\(/gi, (match, name) => {
+      const upper = name.toUpperCase();
+      if (TYPO_MAP[upper]) {
+        changed = true;
+        return TYPO_MAP[upper] + "(";
+      }
+      return match;
+    });
+
+    // Balance parentheses
     let openParens = 0;
     for (let i = 0; i < next.length; i += 1) {
-      if (next[i] === "(") {
-        openParens += 1;
-      }
-      if (next[i] === ")") {
-        openParens -= 1;
-      }
+      if (next[i] === "(") openParens += 1;
+      if (next[i] === ")") openParens -= 1;
     }
-
     if (openParens > 0) {
       next += ")".repeat(openParens);
+      changed = true;
+    }
+
+    // Balance double quotes (simple heuristic)
+    const quoteCount = (next.match(/"/g) || []).length;
+    if (quoteCount % 2 === 1) {
+      next += '"';
+      changed = true;
+    }
+
+    // Collapse multiple spaces inside formula
+    const collapsed = next.replace(/\s{2,}/g, " ");
+    if (collapsed !== next) {
+      next = collapsed;
       changed = true;
     }
 
@@ -1962,14 +2147,36 @@
       changed = true;
     }
 
-    if (next.startsWith("'")) {
+    // Strip leading apostrophe used as text force in Excel
+    if (next.startsWith("'") && !next.startsWith("''")) {
       next = next.slice(1);
       changed = true;
     }
 
+    // Thousands separators: 1,234.56 or 1.234,56 (European)
     if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(next)) {
       next = next.replaceAll(",", "");
       changed = true;
+    } else if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(next)) {
+      next = next.replace(/\./g, "").replace(",", ".");
+      changed = true;
+    }
+
+    // Percent written as "12.5%"
+    if (/^-?\d+(\.\d+)?\s*%$/.test(next)) {
+      const n = parseFloat(next) / 100;
+      next = String(n);
+      changed = true;
+    }
+
+    // Currency symbols
+    if (/^[$€£¥]\s*-?\d/.test(next) || /^-?\d.*[$€£¥]$/.test(next)) {
+      const cleaned = next.replace(/[$€£¥\s,]/g, "").replace(",", ".");
+      const n = Number(cleaned);
+      if (Number.isFinite(n)) {
+        next = String(n);
+        changed = true;
+      }
     }
 
     return { value: next, changed };
@@ -2089,11 +2296,14 @@
       formulasFixed: 0,
       valuesNormalized: 0,
       validationsFixed: 0,
+      consistencyFixes: 0,
+      patternFixes: 0,
       unresolvedFormulaErrors: 0,
       unresolvedValidationErrors: 0,
       changedPreview: []
     };
 
+    // First pass: local cell fixes
     for (let i = 0; i < coords.length; i += 1) {
       const { row, col } = coords[i];
       const cell = workingSheet.data[row][col];
@@ -2126,9 +2336,91 @@
 
       if (changed && after !== before) {
         report.changedCells += 1;
-        changes.push({ row, col, before, after });
+        changes.push({ row, col, before, after, reason: "local" });
       }
     }
+
+    // Second pass: column consistency (when scope is sheet or selection spanning rows)
+    const colGroups = new Map();
+    coords.forEach(({ row, col }) => {
+      if (!colGroups.has(col)) colGroups.set(col, []);
+      colGroups.get(col).push(row);
+    });
+
+    colGroups.forEach((rows, col) => {
+      if (rows.length < 3) return;
+      const samples = rows.map((r) => workingSheet.data[r][col].raw).filter((v) => String(v).trim() !== "");
+      if (samples.length < 3) return;
+
+      // Infer dominant type
+      let numCount = 0, formulaCount = 0, textCount = 0;
+      samples.forEach((v) => {
+        const s = String(v);
+        if (s.startsWith("=")) formulaCount += 1;
+        else if (Number.isFinite(Number(s.replace(/,/g, "")))) numCount += 1;
+        else textCount += 1;
+      });
+
+      const total = samples.length;
+      // If majority numbers, coerce obvious text numbers / clean
+      if (numCount / total >= 0.7) {
+        rows.forEach((r) => {
+          const cell = workingSheet.data[r][col];
+          const before = String(cell.raw ?? "");
+          if (before.startsWith("=") || before.trim() === "") return;
+          const cleaned = before.replace(/[^0-9+\-.]/g, "");
+          const n = Number(cleaned);
+          if (Number.isFinite(n) && String(n) !== before) {
+            cell.raw = String(n);
+            report.consistencyFixes += 1;
+            report.changedCells += 1;
+            changes.push({ row: r, col, before, after: cell.raw, reason: "consistency-number" });
+          }
+        });
+      }
+
+      // If majority formulas of same pattern, try to propagate relative formula to blanks that look like data gaps
+      if (formulaCount / total >= 0.5) {
+        const formulaSamples = samples.filter((v) => String(v).startsWith("="));
+        // Simple pattern: same function name
+        const funcNames = formulaSamples.map((f) => {
+          const m = /^=\s*([A-Z]+)/i.exec(f);
+          return m ? m[1].toUpperCase() : "";
+        }).filter(Boolean);
+        if (funcNames.length) {
+          const modeFunc = funcNames.sort((a, b) =>
+            funcNames.filter((v) => v === a).length - funcNames.filter((v) => v === b).length
+          ).pop();
+          // Find a template formula near the top
+          let template = null;
+          let templateRow = -1;
+          for (const r of rows.sort((a, b) => a - b)) {
+            const raw = workingSheet.data[r][col].raw;
+            if (String(raw).toUpperCase().startsWith("=" + modeFunc)) {
+              template = raw;
+              templateRow = r;
+              break;
+            }
+          }
+          if (template && templateRow >= 0) {
+            rows.forEach((r) => {
+              if (r === templateRow) return;
+              const cell = workingSheet.data[r][col];
+              const before = String(cell.raw ?? "");
+              if (before.trim() !== "") return; // only fill blanks for pattern
+              // Relative translate
+              const translated = translateFormulaReferences(template, r - templateRow, 0);
+              if (translated && translated !== before) {
+                cell.raw = translated;
+                report.patternFixes += 1;
+                report.changedCells += 1;
+                changes.push({ row: r, col, before: before || "<empty>", after: translated, reason: "pattern-fill" });
+              }
+            });
+          }
+        }
+      }
+    });
 
     recalcSheet(workingSheet);
 
@@ -2144,10 +2436,11 @@
       }
     }
 
-    report.changedPreview = changes.slice(0, 20).map((entry) => {
+    report.changedPreview = changes.slice(0, 30).map((entry) => {
       const beforeText = entry.before.length ? entry.before : "<empty>";
       const afterText = entry.after.length ? entry.after : "<empty>";
-      return `${toAddress(entry.row, entry.col)}: ${beforeText} -> ${afterText}`;
+      const why = entry.reason ? ` [${entry.reason}]` : "";
+      return `${toAddress(entry.row, entry.col)}: ${beforeText} -> ${afterText}${why}`;
     });
 
     return { report, changes };
@@ -2164,6 +2457,8 @@
     ui.selfFixFormulaValue.textContent = String(report.formulasFixed);
     ui.selfFixValueValue.textContent = String(report.valuesNormalized);
     ui.selfFixValidationValue.textContent = String(report.validationsFixed);
+    if (ui.selfFixConsistencyValue) ui.selfFixConsistencyValue.textContent = String(report.consistencyFixes || 0);
+    if (ui.selfFixPatternValue) ui.selfFixPatternValue.textContent = String(report.patternFixes || 0);
     ui.selfFixUnresolvedFormulaValue.textContent = String(report.unresolvedFormulaErrors);
     ui.selfFixUnresolvedValidationValue.textContent = String(report.unresolvedValidationErrors);
 
