@@ -40,3 +40,24 @@ SpreadSheetSaga is a browser-based spreadsheet editor prototype inspired by Exce
 - Double-click row/column headers to resize.
 - Right-click cells for row/column insertion and deletion.
 - Use toolbar controls for formatting and data tools.
+
+## Mobile Experience
+
+On phones (and landscape phones) the app switches to a dedicated full-width layout:
+
+- Edge-to-edge grid that fills the real visible viewport (handles iOS toolbars, notches, and the on-screen keyboard)
+- Slim top bar with undo, redo (dimmed when there is nothing to undo/redo), and command search
+- Bottom navigation: **Sheet / Format / Cells / Data / More**. Panels dock above the bar, so you can keep tapping cells while formatting; swipe the handle down to dismiss
+- Sheet tabs along the bottom, auto-centered on the active sheet. Long-press a tab to rename it
+- Touch gestures: tap to select, double-tap to edit in place, long-press for the cell menu (Copy / Paste / Insert / Delete / Clear), pinch to zoom, two-finger tap to undo
+- Tap a column letter or row number to select the whole column or row
+- Copy, Cut and Paste from the Cells panel
+- Range-select toggle (dashed-square button beside the formula bar) to drag across cells, and a large drag handle for fill
+- Apply / Cancel buttons while editing in the formula bar; formula inputs disable autocorrect and auto-capitalisation
+- Short toasts confirm actions (Copied 3 x 2 cells, Add Row, Undo, ...)
+- Automatic dark theme (the sheet "paper" stays light)
+- Installable: add it to your home screen for a full-screen app with offline support (`manifest.webmanifest`, `sw.js`, `icons/`; service workers need HTTPS or localhost)
+- Accessibility: labelled grid and formula bar, dialog semantics, Escape closes dialogs, focus is returned after a dialog closes, tool panel is inert while closed, 40px+ touch targets, 16px inputs to avoid iOS auto-zoom
+
+Files: `mobile.css` (layout and themes), `mobile.js` (behavior), plus small touch hooks in `app.js`.
+The mobile breakpoint is defined in three places that must match: `mobile.css`, `app.js` (`MOBILE_QUERY`), and `mobile.js` (`MOBILE_QUERY`).

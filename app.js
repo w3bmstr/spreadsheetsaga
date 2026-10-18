@@ -3,6 +3,14 @@
   const DEFAULT_COLS = 26;
   const STORAGE_KEY = "spreadsheet-saga-state-v1";
 
+  // Keep in sync with the media query in mobile.css and MOBILE_QUERY in mobile.js
+  const MOBILE_QUERY = "(max-width: 767px), (max-height: 500px) and (pointer: coarse)";
+  const isMobileLayout = () => window.matchMedia(MOBILE_QUERY).matches;
+  // On a phone/tablet with a finger as the primary pointer, tapping a cell should select it
+  // (double-tap or the formula bar edits) instead of immediately raising the keyboard.
+  const isTouchEditMode = () => isMobileLayout() && window.matchMedia("(pointer: coarse)").matches;
+  const DEFAULT_ROW_HEIGHT = window.matchMedia("(pointer: coarse)").matches ? 36 : 30;
+
   const state = {
     sheets: [],
     activeSheetId: null,
@@ -86,9 +94,6 @@
     commandPaletteInput: document.getElementById("commandPaletteInput"),
     commandPaletteList: document.getElementById("commandPaletteList"),
     closeCommandPaletteBtn: document.getElementById("closeCommandPaletteBtn"),
-    mobileFabDock: document.getElementById("mobileFabDock"),
-    mobileFabMain: document.getElementById("mobileFabMain"),
-    mobileFabMenu: document.getElementById("mobileFabMenu"),
     liveRegion: document.getElementById("liveRegion"),
     selectionStatus: document.getElementById("selectionStatus"),
     calculationStatus: document.getElementById("calculationStatus"),
@@ -322,7 +327,7 @@
       rows,
       cols,
       data,
-      rowHeights: Array.from({ length: rows }, () => 30),
+      rowHeights: Array.from({ length: rows }, () => DEFAULT_ROW_HEIGHT),
       colWidths: Array.from({ length: cols }, () => 112),
       hiddenRows: [],
       filter: null,
@@ -412,7 +417,19 @@
       state.history.shift();
     }
     state.future = [];
+    updateHistoryButtons();
     scheduleAutoSave();
+  }
+
+  function updateHistoryButtons() {
+    const undoBtn = document.getElementById("undoBtn");
+    const redoBtn = document.getElementById("redoBtn");
+    if (undoBtn) {
+      undoBtn.disabled = state.history.length === 0;
+    }
+    if (redoBtn) {
+      redoBtn.disabled = state.future.length === 0;
+    }
   }
 
   function restoreSnapshot(serialized) {
@@ -805,8 +822,10 @@
       return;
     }
 
+    const touchEdit = isTouchEditMode();
     ui.table.innerHTML = "";
     ui.table.setAttribute("role", "grid");
+    ui.table.setAttribute("aria-label", `${sheet.name} spreadsheet grid`);
     ui.table.setAttribute("aria-rowcount", String(sheet.rows));
     ui.table.setAttribute("aria-colcount", String(sheet.cols));
 
@@ -861,7 +880,7 @@
         td.setAttribute("role", "gridcell");
         td.dataset.row = r;
         td.dataset.col = c;
-        td.contentEditable = "true";
+        td.contentEditable = touchEdit ? "false" : "true";
         td.spellcheck = false;
         td.style.width = `${sheet.colWidths[c]}px`;
         td.style.height = `${sheet.rowHeights[r]}px`;
@@ -1231,10 +1250,6 @@
       ui.sheetMenuPanel.hidden = true;
       ui.sheetMenuBtn?.setAttribute("aria-expanded", "false");
     }
-    if (ui.mobileFabMenu && !ui.mobileFabMenu.hidden) {
-      ui.mobileFabMenu.hidden = true;
-      ui.mobileFabMain?.setAttribute("aria-expanded", "false");
-    }
   }
 
   function toggleToolbarOverflow(force) {
@@ -1283,7 +1298,9 @@
 
   function commandPaletteEntries(query = "") {
     const search = query.trim().toLowerCase();
+    const mobile = isMobileLayout();
     return Object.entries(COMMANDS)
+      .filter(([id]) => !(mobile && id.startsWith("tab-")))
       .filter(([id, cmd]) => {
         const text = `${id} ${cmd.label} ${cmd.shortcut || ""}`.toLowerCase();
         return !search || text.includes(search);
@@ -1349,29 +1366,6 @@
     ui.commandPaletteModal.hidden = true;
   }
 
-  function toggleMobileFab(force) {
-    if (!ui.mobileFabMenu) {
-      return;
-    }
-    const next = typeof force === "boolean" ? force : ui.mobileFabMenu.hidden;
-    if (next) {
-      hideTransientPanels();
-    }
-    ui.mobileFabMenu.hidden = !next;
-    ui.mobileFabMain?.setAttribute("aria-expanded", String(next));
-  }
-
-  function refreshResponsiveNav() {
-    if (!ui.mobileFabDock) {
-      return;
-    }
-    const mobile = window.innerWidth <= 767;
-    ui.mobileFabDock.hidden = !mobile;
-    if (!mobile) {
-      toggleMobileFab(false);
-    }
-  }
-
   function updateToolbarState() {
     const sheet = activeSheet();
     if (!sheet) {
@@ -1432,6 +1426,7 @@
     renderSheetTabs();
     renderGrid();
     syncFormulaBar();
+    updateHistoryButtons();
     persistState();
   }
 
@@ -1590,7 +1585,7 @@
   }
 
   function updateSelectionVisuals() {
-    ui.table.querySelectorAll("td").forEach((td) => {
+    ui.table.querySelectorAll("td.selected, td.active, td[tabindex='0']").forEach((td) => {
       td.classList.remove("selected", "active");
       td.setAttribute("aria-selected", "false");
       td.tabIndex = -1;
@@ -1599,7 +1594,7 @@
     const { minR, maxR, minC, maxC } = rangeBounds();
     for (let r = minR; r <= maxR; r += 1) {
       for (let c = minC; c <= maxC; c += 1) {
-        const td = ui.table.querySelector(`td[data-row='${r}'][data-col='${c}']`);
+        const td = ui.table.rows[r + 1]?.cells[c + 1];
         if (td) {
           td.classList.add("selected");
           td.setAttribute("aria-selected", "true");
@@ -1607,11 +1602,13 @@
       }
     }
 
-    const active = ui.table.querySelector(`td[data-row='${state.activeCell.row}'][data-col='${state.activeCell.col}']`);
+    const active = ui.table.rows[state.activeCell.row + 1]?.cells[state.activeCell.col + 1];
     if (active) {
       active.classList.add("active");
       active.tabIndex = 0;
     }
+
+    placeFillHandle();
   }
 
   function setSelection(startRow, startCol, endRow, endCol, options = {}) {
@@ -1731,7 +1728,7 @@
     pushHistory();
     const row = Array.from({ length: sheet.cols }, () => makeCell());
     sheet.data.splice(atIndex, 0, row);
-    sheet.rowHeights.splice(atIndex, 0, 30);
+    sheet.rowHeights.splice(atIndex, 0, DEFAULT_ROW_HEIGHT);
     sheet.rows += 1;
     renderAll();
   }
@@ -2982,10 +2979,6 @@
       toggleSheetMenu();
     });
 
-    ui.mobileFabMain?.addEventListener("click", () => {
-      toggleMobileFab();
-    });
-
     ui.closeCommandPaletteBtn?.addEventListener("click", closeCommandPalette);
     ui.commandPaletteInput?.addEventListener("input", () => {
       state.commandPaletteIndex = 0;
@@ -3061,9 +3054,6 @@
       }
       if (!e.target.closest("#sheetMenuBtn") && !e.target.closest("#sheetMenuPanel")) {
         toggleSheetMenu(false);
-      }
-      if (!e.target.closest("#mobileFabMain") && !e.target.closest("#mobileFabMenu")) {
-        toggleMobileFab(false);
       }
     });
 
@@ -3210,9 +3200,6 @@
     bindToolbar();
     setZoom(state.zoom);
     setRibbonTab(state.activeRibbonTab, { silent: true });
-
-    window.addEventListener("resize", refreshResponsiveNav);
-    refreshResponsiveNav();
 
     renderAll();
   }

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SpreadSheetSaga Brand Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8fafc;--surface:#fff;--ink:#0f172a;--muted:#475569;--line:#dbe3ee;--ember:#ea580c;--teal:#0f766e;--midnight:#0f172a;--parch:#fffdf8;--hero:#0f172a;--hero-ink:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1220;--surface:#111827;--ink:#e6edf7;--muted:#a3b2c7;--line:#263244}}
+:root[data-theme="dark"]{--bg:#0b1220;--surface:#111827;--ink:#e6edf7;--muted:#a3b2c7;--line:#263244}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Space Grotesk","Segoe UI",sans-serif;line-height:1.55;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+.hero{background:var(--hero);color:var(--hero-ink);padding:56px 20px 48px}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+.hero .wrap{padding:0}
+.lockup{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.tile{width:84px;height:84px;border-radius:22px;background:var(--ember);display:grid;place-items:center;flex:0 0 auto}
+.tile svg{width:56px;height:56px}
+h1{margin:0;font-size:clamp(2rem,6vw,3.2rem);line-height:1.05;letter-spacing:-.02em}
+.tag{margin:14px 0 0;font-size:1.15rem;color:#cbd5e1;max-width:34ch}
+section{padding:40px 0;border-bottom:1px solid var(--line)}
+h2{margin:0 0 6px;font-size:1.5rem;letter-spacing:-.01em}
+.lead{margin:0 0 22px;color:var(--muted);max-width:62ch}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+.card h3{margin:0 0 6px;font-size:.95rem}
+.card p{margin:0;color:var(--muted);font-size:.9rem}
+.sw{border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
+.sw .chip{height:92px;display:flex;align-items:flex-end;padding:10px 14px;font:500 .8rem "IBM Plex Mono",monospace}
+.sw .meta{padding:12px 14px}
+.sw b{display:block}
+.sw span{display:block;color:var(--muted);font-size:.85rem}
+.logos{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.logo-box{border-radius:16px;border:1px solid var(--line);min-height:150px;display:grid;place-items:center;padding:20px;text-align:center;font-size:.8rem;color:var(--muted)}
+.logo-box svg{width:72px;height:72px;margin-bottom:10px}
+.on-ember{background:var(--ember);color:#fff}
+.on-night{background:#0f172a;color:#cbd5e1}
+.on-paper{background:#fffdf8;color:#475569;border-color:#e5dfd0}
+.type-demo{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px}
+.type-demo .big{font-size:2.4rem;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.mono{font-family:"IBM Plex Mono",monospace}
+.formula{display:inline-block;margin-top:12px;padding:10px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:1rem}
+.fx{color:var(--teal);font-weight:500}.ref{color:#7c3aed}
+@media (prefers-color-scheme:dark){.fx{color:#5eead4}.ref{color:#c4a8ff}}
+ul.rules{margin:0;padding-left:1.1rem;color:var(--muted)}
+ul.rules li{margin:6px 0}
+.say{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.yes,.no{border-radius:14px;padding:14px 16px;font-size:.95rem;border:1px solid var(--line);background:var(--surface)}
+.yes b{color:var(--teal)}.no b{color:#dc2626}
+footer{padding:28px 0 48px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="lockup">
+      <div class="tile"><svg viewBox="0 0 280 280" aria-hidden="true"><g fill="#fff"><rect x="0" y="0" width="80" height="80" rx="18" fill-opacity=".28"/><rect x="100" y="0" width="80" height="80" rx="18"/><rect x="200" y="0" width="80" height="80" rx="18"/><rect x="0" y="100" width="80" height="80" rx="18" fill-opacity=".28"/><rect x="100" y="100" width="80" height="80" rx="18"/><rect x="200" y="100" width="80" height="80" rx="18" fill-opacity=".28"/><rect x="0" y="200" width="80" height="80" rx="18"/><rect x="100" y="200" width="80" height="80" rx="18"/><rect x="200" y="200" width="80" height="80" rx="18" fill-opacity=".28"/></g></svg></div>
+      <h1>SpreadSheetSaga</h1>
+    </div>
+    <p class="tag">Every sheet tells a story. Make yours clear.</p>
+  </div>
+</header>
+
+<main class="wrap">
+<section id="idea">
+  <h2>The idea</h2>
+  <p class="lead">A spreadsheet is a grid of cells, and a saga is a story that unfolds across them. The mark is a three by three sheet where a path of lit cells traces an S: the thread running through your data.</p>
+  <div class="grid">
+    <div class="card"><h3>Clear</h3><p>Numbers first. Interfaces stay quiet so results speak.</p></div>
+    <div class="card"><h3>Confident</h3><p>Plain verbs, no hedging. We tell you what happened and what to do.</p></div>
+    <div class="card"><h3>A little storybook</h3><p>One warm accent and a touch of narrative. Never cute at the cost of speed.</p></div>
+  </div>
+</section>
+
+<section id="logo">
+  <h2>Logo</h2>
+  <p class="lead">Use the mark on its own for app icons and small spaces. Pair it with the wordmark, set in Space Grotesk Bold, when there is room. Files are in <span class="mono">icons/</span>.</p>
+  <div class="logos">
+    <div class="logo-box on-paper"><svg viewBox="0 0 280 280" aria-hidden="true"><g fill="#ea580c"><rect x="0" y="0" width="80" height="80" rx="18" fill-opacity=".25"/><rect x="100" y="0" width="80" height="80" rx="18"/><rect x="200" y="0" width="80" height="80" rx="18"/><rect x="0" y="100" width="80" height="80" rx="18" fill-opacity=".25"/><rect x="100" y="100" width="80" height="80" rx="18"/><rect x="200" y="100" width="80" height="80" rx="18" fill-opacity=".25"/><rect x="0" y="200" width="80" height="80" rx="18"/><rect x="100" y="200" width="80" height="80" rx="18"/><rect x="200" y="200" width="80" height="80" rx="18" fill-opacity=".25"/></g></svg>Color on paper<br><span class="mono">logo-mark.svg</span></div>
+    <div class="logo-box on-ember"><svg viewBox="0 0 280 280" aria-hidden="true"><g fill="#fff"><rect x="0" y="0" width="80" height="80" rx="18" fill-opacity=".3"/><rect x="100" y="0" width="80" height="80" rx="18"/><rect x="200" y="0" width="80" height="80" rx="18"/><rect x="0" y="100" width="80" height="80" rx="18" fill-opacity=".3"/><rect x="100" y="100" width="80" height="80" rx="18"/><rect x="200" y="100" width="80" height="80" rx="18" fill-opacity=".3"/><rect x="0" y="200" width="80" height="80" rx="18"/><rect x="100" y="200" width="80" height="80" rx="18"/><rect x="200" y="200" width="80" height="80" rx="18" fill-opacity=".3"/></g></svg>Reversed on Ember</div>
+    <div class="logo-box on-night"><svg viewBox="0 0 280 280" aria-hidden="true"><g fill="#cbd5e1"><rect x="0" y="0" width="80" height="80" rx="18" fill-opacity=".25"/><rect x="100" y="0" width="80" height="80" rx="18"/><rect x="200" y="0" width="80" height="80" rx="18"/><rect x="0" y="100" width="80" height="80" rx="18" fill-opacity=".25"/><rect x="100" y="100" width="80" height="80" rx="18"/><rect x="200" y="100" width="80" height="80" rx="18" fill-opacity=".25"/><rect x="0" y="200" width="80" height="80" rx="18"/><rect x="100" y="200" width="80" height="80" rx="18"/><rect x="200" y="200" width="80" height="80" rx="18" fill-opacity=".25"/></g></svg>One color on dark<br><span class="mono">logo-mark-mono.svg</span></div>
+  </div>
+  <ul class="rules" style="margin-top:18px">
+    <li>Keep clear space around the mark equal to one cell (a fifth of its width).</li>
+    <li>Minimum size: 16px on screen. Below that, use the app icon tile.</li>
+    <li>Do not rotate, stretch, outline, recolor the lit path, or light a different set of cells.</li>
+  </ul>
+</section>
+
+<section id="color">
+  <h2>Color</h2>
+  <p class="lead">Ember leads, Teal confirms, Midnight grounds. Everything else is a neutral. Ember and Teal never share a button.</p>
+  <div class="grid">
+    <div class="sw"><div class="chip" style="background:#ea580c;color:#fff">#EA580C</div><div class="meta"><b>Saga Ember</b><span>Brand and logo. Highlights and calls to action on dark surfaces.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#0f766e;color:#fff">#0F766E</div><div class="meta"><b>Ledger Teal</b><span>Interactive state: selected tab, primary button, success. Lighter #2DD4BF on dark.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#0f172a;color:#fff">#0F172A</div><div class="meta"><b>Midnight Ink</b><span>Header bar, text, dark theme base.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#fffdf8;color:#475569;border-bottom:1px solid #e5dfd0">#FFFDF8</div><div class="meta"><b>Parchment</b><span>The sheet itself. Warm paper behind your data, in light and dark themes.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#64748b;color:#fff">#64748B</div><div class="meta"><b>Slate</b><span>Secondary text and icons. Meets 4.5:1 on white.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#b91c1c;color:#fff">#B91C1C</div><div class="meta"><b>Alert Red</b><span>Destructive actions and invalid cells only.</span></div></div>
+  </div>
+</section>
+
+<section id="type">
+  <h2>Typography</h2>
+  <p class="lead">Two families, both open source. Space Grotesk carries the interface; IBM Plex Mono is reserved for anything that is data.</p>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+    <div class="type-demo"><div class="big">Space Grotesk</div><p style="color:var(--muted);margin:8px 0 0">Headings, buttons, labels. Weights 500, 600 and 700. Tight tracking on large sizes (-0.02em).</p></div>
+    <div class="type-demo"><div class="big mono" style="font-weight:500">IBM Plex Mono</div><p style="color:var(--muted);margin:8px 0 0">Cell addresses, formulas, status readouts. Always tabular so columns line up.</p><span class="formula"><span class="fx">=SUM</span>(<span class="ref">B2:B14</span>) * 1.07</span></div>
+  </div>
+</section>
+
+<section id="voice">
+  <h2>Voice</h2>
+  <p class="lead">Talk like a sharp colleague looking over your shoulder: short sentences, active verbs, no jargon, no exclamation marks.</p>
+  <div class="say">
+    <div class="yes"><b>Say</b><br>Copied 3 x 2 cells.<br>That formula refers to itself. Check B7.<br>Nothing to undo yet.</div>
+    <div class="no"><b>Avoid</b><br>Oops! Something went wrong!<br>Circular reference error code 522.<br>Action unavailable at this time.</div>
+  </div>
+</section>
+
+<section id="next" style="border-bottom:0">
+  <h2>Where this goes next</h2>
+  <ul class="rules">
+    <li>Apply the tokens above across the desktop interface (today only mobile uses the new palette).</li>
+    <li>Outline the wordmark to SVG paths so the logo file does not depend on installed fonts.</li>
+    <li>Add a splash screen, social preview image and empty-state illustrations in the same cell-grid style.</li>
+  </ul>
+</section>
+</main>
+<footer class="wrap">SpreadSheetSaga brand foundation, first pass.</footer>
+</body>
+</html>

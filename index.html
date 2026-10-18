@@ -2,26 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="apple-mobile-web-app-title" content="SheetSaga" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>SpreadSheetSaga - Excel Style Editor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="mobile.css" />
 </head>
 <body>
   <div class="app-shell">
     <header class="nav-shell">
       <div class="nav-upper">
         <div class="brand-wrap">
-          <div class="brand-badge">SS</div>
+          <div class="brand-badge" role="img" aria-label="SpreadSheetSaga logo"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="#ffffff" fill-opacity="0.3"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="#ffffff"/><rect x="17" y="1" width="6" height="6" rx="1.5" fill="#ffffff"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="#ffffff" fill-opacity="0.3"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="#ffffff"/><rect x="17" y="9" width="6" height="6" rx="1.5" fill="#ffffff" fill-opacity="0.3"/><rect x="1" y="17" width="6" height="6" rx="1.5" fill="#ffffff"/><rect x="9" y="17" width="6" height="6" rx="1.5" fill="#ffffff"/><rect x="17" y="17" width="6" height="6" rx="1.5" fill="#ffffff" fill-opacity="0.3"/></svg></div>
           <div>
             <h1>SpreadSheetSaga</h1>
             <p>Professional spreadsheet workspace</p>
+            <p class="m-sub m-only" id="mSub" aria-hidden="true">Sheet 1 | A1</p>
           </div>
         </div>
 
-        <button id="commandPaletteBtn" class="command-launch" type="button" title="Command Palette (Ctrl+K)">
+        <button class="m-icon-btn m-only" type="button" data-proxy="undoBtn" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-undo"/></svg></button>
+        <button class="m-icon-btn m-only" type="button" data-proxy="redoBtn" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-redo"/></svg></button>
+
+        <button id="commandPaletteBtn" class="command-launch" type="button" title="Command Palette (Ctrl+K)" aria-label="Search commands">
+          <svg class="m-only" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg>
           <span>Search commands, tools, and actions</span>
           <span class="shortcut-hint">Ctrl+K</span>
         </button>
@@ -146,18 +161,23 @@
       </div>
 
       <section class="formula-wrap" aria-label="Formula navigation">
-      <input class="name-box name-input" id="nameBox" type="text" value="A1" spellcheck="false" aria-label="Cell address" />
+      <input class="name-box name-input" id="nameBox" type="text" value="A1" spellcheck="false" autocapitalize="characters" autocomplete="off" autocorrect="off" enterkeyhint="go" aria-label="Cell address" />
       <div class="formula-stack">
         <div id="formulaHighlight" class="formula-highlight"></div>
-        <input id="formulaInput" class="formula-input" type="text" list="formulaSuggestions" spellcheck="false" />
+        <input id="formulaInput" class="formula-input" type="text" list="formulaSuggestions" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" enterkeyhint="done" aria-label="Formula bar" placeholder="Value or =formula" />
         <datalist id="formulaSuggestions"></datalist>
       </div>
+      <div class="m-edit-actions m-only" id="mEditActions">
+        <button id="mCancelBtn" class="m-edit-btn cancel" type="button" aria-label="Cancel edit"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg></button>
+        <button id="mCommitBtn" class="m-edit-btn commit" type="button" aria-label="Apply edit"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg></button>
+      </div>
+      <button id="mSelectBtn" class="m-select-toggle m-only" type="button" aria-pressed="false" aria-label="Select a range of cells" title="Select range"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-select"/></svg></button>
       </section>
 
       <section class="find-bar" id="findBar" aria-label="Find in workbook" hidden>
         <span class="find-label">Find</span>
-        <input id="findInput" class="text-input" type="search" placeholder="Search this sheet" spellcheck="false" />
-        <input id="replaceInput" class="text-input replace-input" type="text" placeholder="Replace with" spellcheck="false" />
+        <input id="findInput" class="text-input" type="search" placeholder="Search this sheet" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" enterkeyhint="search" aria-label="Find" />
+        <input id="replaceInput" class="text-input replace-input" type="text" placeholder="Replace with" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Replace with" />
         <span id="findCount" class="find-count">0 matches</span>
         <button id="findPrevBtn" class="btn ghost small" type="button" title="Previous match">Prev</button>
         <button id="findNextBtn" class="btn ghost small" type="button" title="Next match">Next</button>
@@ -182,15 +202,15 @@
 
         <div class="sheet-navigator">
           <div class="sheet-tabs" id="sheetTabs" role="tablist" aria-label="Workbook sheets"></div>
-          <button id="sheetMenuBtn" class="btn ghost small" type="button" aria-expanded="false" aria-controls="sheetMenuPanel">All Sheets</button>
-          <button id="addSheetBtn" class="btn" type="button">+ Sheet</button>
+          <button id="sheetMenuBtn" class="btn ghost small" type="button" aria-expanded="false" aria-controls="sheetMenuPanel" aria-label="All sheets"><span class="lbl">All Sheets</span><svg class="m-only" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-layers"/></svg></button>
+          <button id="addSheetBtn" class="btn" type="button" aria-label="Add sheet"><span class="lbl">+ Sheet</span><svg class="m-only" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg></button>
         </div>
       </div>
 
       <div id="sheetMenuPanel" class="sheet-menu-panel" role="menu" aria-label="Sheet list" hidden></div>
     </section>
 
-    <section class="grid-wrap" id="gridWrap">
+    <section class="grid-wrap" id="gridWrap" role="region" aria-label="Spreadsheet grid" tabindex="-1">
       <table id="sheetTable" class="sheet-table"></table>
       <div id="fillHandle" class="fill-handle" aria-hidden="true"></div>
     </section>
@@ -209,6 +229,8 @@
   </div>
 
   <div id="contextMenu" class="context-menu" role="menu" hidden>
+    <button role="menuitem" data-act="copy">Copy</button>
+    <button role="menuitem" data-cmd="paste">Paste</button>
     <button role="menuitem" data-cmd="insert-row" data-command="insert-row">Insert Row</button>
     <button role="menuitem" data-cmd="delete-row" data-command="delete-row">Delete Row</button>
     <button role="menuitem" data-cmd="insert-col" data-command="insert-col">Insert Col</button>
@@ -217,9 +239,9 @@
   </div>
 
   <div id="chartModal" class="modal" hidden>
-    <div class="modal-content">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="chartModalTitle">
       <div class="modal-head">
-        <h2>Create Chart</h2>
+        <h2 id="chartModalTitle">Create Chart</h2>
         <button id="closeChartModal" class="btn ghost small" type="button">Close</button>
       </div>
       <div class="modal-row">
@@ -232,14 +254,14 @@
         </label>
         <button id="renderChartBtn" class="btn" type="button">Render</button>
       </div>
-      <canvas id="chartCanvas" width="760" height="300"></canvas>
+      <canvas id="chartCanvas" width="760" height="300" role="img" aria-label="Chart preview"></canvas>
     </div>
   </div>
 
   <div id="selfFixReportModal" class="modal" hidden>
-    <div class="modal-content self-fix-modal-content">
+    <div class="modal-content self-fix-modal-content" role="dialog" aria-modal="true" aria-labelledby="selfFixModalTitle">
       <div class="modal-head">
-        <h2>Self Fix Report</h2>
+        <h2 id="selfFixModalTitle">Self Fix Report</h2>
         <button id="closeSelfFixReportModal" class="btn ghost small" type="button">Close</button>
       </div>
       <div class="self-fix-summary" id="selfFixSummary"></div>
@@ -267,154 +289,240 @@
         <h2 id="commandPaletteTitle">Command Palette</h2>
         <button id="closeCommandPaletteBtn" class="btn ghost small" type="button">Close</button>
       </div>
-      <input id="commandPaletteInput" class="text-input command-palette-input" type="text" placeholder="Search commands..." spellcheck="false" />
+      <input id="commandPaletteInput" class="text-input command-palette-input" type="text" placeholder="Search commands..." spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" enterkeyhint="go" aria-label="Search commands" />
       <ul id="commandPaletteList" class="command-palette-list" role="listbox" aria-label="Available commands"></ul>
     </div>
   </div>
 
-  <div id="mobileFabDock" class="mobile-fab-dock">
-    <button id="mobileFabMain" class="mobile-fab-main" type="button" aria-expanded="false" aria-controls="mobileFabMenu" aria-label="Open quick actions">+</button>
-    <div id="mobileFabMenu" class="mobile-fab-menu" hidden>
-      <button type="button" data-command="add-row">Add Row</button>
-      <button type="button" data-command="add-col">Add Col</button>
-      <button type="button" data-command="add-sheet">Add Sheet</button>
-      <button type="button" data-command="paste">Paste</button>
-      <button type="button" data-command="self-fix">Self Fix</button>
-    </div>
+  <!-- ===== Mobile UI (hidden on desktop via mobile.css) ===== -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-undo" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></symbol>
+      <symbol id="i-redo" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></symbol>
+      <symbol id="i-type" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></symbol>
+      <symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></symbol>
+      <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></symbol>
+      <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+      <symbol id="i-select" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3"/><circle cx="17" cy="17" r="2.2"/></symbol>
+      <symbol id="i-filter" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+      <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></symbol>
+      <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></symbol>
+      <symbol id="i-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+      <symbol id="i-right" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+      <symbol id="i-zoom-in" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></symbol>
+      <symbol id="i-zoom-out" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></symbol>
+      <symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+      <symbol id="i-align-l" viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></symbol>
+      <symbol id="i-align-c" viewBox="0 0 24 24"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></symbol>
+      <symbol id="i-align-r" viewBox="0 0 24 24"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></symbol>
+      <symbol id="i-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
+      <symbol id="i-rows" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="12" y1="8" x2="12" y2="8.01"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+      <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></symbol>
+      <symbol id="i-command" viewBox="0 0 24 24"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></symbol>
+    </defs>
+  </svg>
+
+  <div id="mToast" class="m-toast" role="presentation" aria-hidden="true"></div>
+
+  <div id="mHint" class="m-hint" hidden role="status">
+    <span>Drag across cells to select</span>
+    <button type="button" id="mHintDone">Done</button>
   </div>
 
-  <!-- Mobile bottom navigation bar -->
-  <nav class="mobile-bottom-bar" aria-label="Mobile navigation">
-    <button class="mobile-bottom-tab active" id="mobileTabHome" type="button">
-      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      Home
-    </button>
-    <button class="mobile-bottom-tab" id="mobileTabFormat" type="button" data-drawer-toggle="true">
-      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h12"/></svg>
-      Format
-    </button>
-    <button class="mobile-bottom-tab" id="mobileTabData" type="button" data-ribbon-tab-mobile="data">
-      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Data
-    </button>
-    <button class="mobile-bottom-tab" id="mobileTabTools" type="button" data-ribbon-tab-mobile="tools">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-      Tools
-    </button>
+  <!-- Docked tool panel: stays open while you tap cells, so formatting a range is effortless -->
+  <section id="mSheet" class="m-sheet" aria-hidden="true" aria-labelledby="mSheetTitle">
+    <div class="m-sheet-grab" id="mSheetGrab" aria-hidden="true"></div>
+    <div class="m-sheet-head">
+      <h2 id="mSheetTitle">Format</h2>
+      <button type="button" class="m-icon-btn" id="mSheetClose" aria-label="Close panel"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+
+    <!-- FORMAT -->
+    <div class="m-panel" data-panel="format" hidden>
+      <div class="m-row">
+        <div class="m-seg" role="group" aria-label="Text style">
+          <button type="button" class="m-btn" data-proxy="boldBtn" data-toggle aria-pressed="false" aria-label="Bold"><strong>B</strong></button>
+          <button type="button" class="m-btn" data-proxy="italicBtn" data-toggle aria-pressed="false" aria-label="Italic"><em>I</em></button>
+          <button type="button" class="m-btn" data-proxy="underlineBtn" data-toggle aria-pressed="false" aria-label="Underline"><span style="text-decoration:underline">U</span></button>
+        </div>
+        <div class="m-seg" role="group" aria-label="Alignment">
+          <button type="button" class="m-btn" data-proxy="alignLeftBtn" data-toggle aria-pressed="false" aria-label="Align left"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-align-l"/></svg></button>
+          <button type="button" class="m-btn" data-proxy="alignCenterBtn" data-toggle aria-pressed="false" aria-label="Align center"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-align-c"/></svg></button>
+          <button type="button" class="m-btn" data-proxy="alignRightBtn" data-toggle aria-pressed="false" aria-label="Align right"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-align-r"/></svg></button>
+        </div>
+      </div>
+
+      <div class="m-grid-2">
+        <label class="m-field">Font size
+          <select data-proxy="fontSizeSelect">
+            <option value="12">12</option>
+            <option value="14">14</option>
+            <option value="16">16</option>
+            <option value="18">18</option>
+            <option value="20">20</option>
+          </select>
+        </label>
+        <label class="m-field">Number format
+          <select data-proxy="numberFormatSelect">
+            <option value="general">General</option>
+            <option value="currency">Currency</option>
+            <option value="percent">Percent</option>
+            <option value="decimal-0">Decimal (0)</option>
+            <option value="decimal-2">Decimal (2)</option>
+            <option value="decimal-4">Decimal (4)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="m-grid-2">
+        <label class="m-color">Fill <input type="color" data-proxy="fillColor" value="#ffffff" /></label>
+        <label class="m-color">Border <input type="color" data-proxy="borderColor" value="#cbd5e1" /></label>
+      </div>
+    </div>
+
+    <!-- CELLS -->
+    <div class="m-panel" data-panel="cells" hidden>
+      <p class="m-title">Rows &amp; columns <span class="m-tip">Tap a row or column number to select it</span></p>
+      <div class="m-grid-4">
+        <button type="button" class="m-btn stack" data-command="add-row"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg>Add row</button>
+        <button type="button" class="m-btn stack danger" data-command="delete-row"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-trash"/></svg>Delete row</button>
+        <button type="button" class="m-btn stack" data-command="move-row-up"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-up"/></svg>Row up</button>
+        <button type="button" class="m-btn stack" data-command="move-row-down"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg>Row down</button>
+      </div>
+      <div class="m-grid-4">
+        <button type="button" class="m-btn stack" data-command="add-col"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg>Add col</button>
+        <button type="button" class="m-btn stack danger" data-command="delete-col"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-trash"/></svg>Delete col</button>
+        <button type="button" class="m-btn stack" data-command="move-col-left"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-left"/></svg>Col left</button>
+        <button type="button" class="m-btn stack" data-command="move-col-right"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-right"/></svg>Col right</button>
+      </div>
+      <p class="m-title">Selection</p>
+      <div class="m-grid-3">
+        <button type="button" class="m-btn stack" data-act="copy"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-copy"/></svg>Copy</button>
+        <button type="button" class="m-btn stack" data-act="cut"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-scissors"/></svg>Cut</button>
+        <button type="button" class="m-btn stack" data-command="paste"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-clipboard"/></svg>Paste</button>
+        <button type="button" class="m-btn stack" data-command="insert-row"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rows"/></svg>Insert row</button>
+        <button type="button" class="m-btn stack" data-command="insert-col"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-layout"/></svg>Insert col</button>
+        <button type="button" class="m-btn stack" data-command="clear-cell"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-x-circle"/></svg>Clear</button>
+      </div>
+    </div>
+
+    <!-- DATA -->
+    <div class="m-panel" data-panel="data" hidden>
+      <p class="m-title">Sort &amp; filter</p>
+      <div class="m-grid-2">
+        <button type="button" class="m-btn" data-command="sort-asc"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-up"/></svg>Sort A to Z</button>
+        <button type="button" class="m-btn" data-command="sort-desc"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg>Sort Z to A</button>
+        <button type="button" class="m-btn" data-command="filter"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-filter"/></svg>Filter</button>
+        <button type="button" class="m-btn" data-command="clear-filter"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-x-circle"/></svg>Clear filter</button>
+      </div>
+
+      <p class="m-title">Analyze</p>
+      <div class="m-grid-2">
+        <button type="button" class="m-btn" data-proxy="chartBtn" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chart"/></svg>Create chart</button>
+        <button type="button" class="m-btn" data-proxy="selfFixBtn" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-zap"/></svg>Run self fix</button>
+      </div>
+      <div class="m-grid-2">
+        <label class="m-field">Self fix scope
+          <select data-proxy="selfFixScopeSelect">
+            <option value="active">Active cell</option>
+            <option value="selection">Selection</option>
+            <option value="sheet" selected>Whole sheet</option>
+          </select>
+        </label>
+        <label class="m-field">Mode
+          <span class="m-switch">Preview only <input type="checkbox" data-proxy="selfFixPreviewCheckbox" checked /></span>
+        </label>
+      </div>
+
+      <p class="m-title">Validation</p>
+      <div class="m-grid-2">
+        <label class="m-field">Rule
+          <select data-proxy="validationSelect">
+            <option value="none">None</option>
+            <option value="number">Number</option>
+            <option value="integer">Integer</option>
+            <option value="non-empty">Non empty</option>
+            <option value="list">List</option>
+          </select>
+        </label>
+        <label class="m-field">List values
+          <input type="text" data-proxy="validationListInput" placeholder="A,B,C" autocapitalize="off" autocomplete="off" spellcheck="false" />
+        </label>
+      </div>
+    </div>
+
+    <!-- MORE -->
+    <div class="m-panel" data-panel="more" hidden>
+      <p class="m-title">File</p>
+      <div class="m-list">
+        <button type="button" class="m-list-btn" data-command="import-csv" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-upload"/></svg>Import CSV</button>
+        <button type="button" class="m-list-btn" data-command="export-csv" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-download"/></svg>Export CSV</button>
+        <button type="button" class="m-list-btn" data-command="save-session"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-save"/></svg>Save session</button>
+        <button type="button" class="m-list-btn" data-command="load-saved" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-folder"/></svg>Load saved session</button>
+      </div>
+
+      <p class="m-title">View</p>
+      <div class="m-grid-3">
+        <button type="button" class="m-btn" data-command="zoom-out" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-zoom-out"/></svg></button>
+        <button type="button" class="m-btn" data-command="zoom-reset">100%</button>
+        <button type="button" class="m-btn" data-command="zoom-in" aria-label="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-zoom-in"/></svg></button>
+      </div>
+      <div class="m-grid-2">
+        <label class="m-field">Freeze rows
+          <input type="number" inputmode="numeric" min="0" value="0" data-proxy="freezeRowsInput" />
+        </label>
+        <label class="m-field">Freeze columns
+          <input type="number" inputmode="numeric" min="0" value="0" data-proxy="freezeColsInput" />
+        </label>
+      </div>
+      <div class="m-list">
+        <button type="button" class="m-list-btn" data-command="find" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg>Find and replace</button>
+        <button type="button" class="m-list-btn" data-command="command-palette" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-command"/></svg>All commands</button>
+      </div>
+
+      <p class="m-title">Current sheet</p>
+      <div class="m-list">
+        <button type="button" class="m-list-btn" data-act="rename-sheet" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-edit"/></svg>Rename sheet</button>
+        <button type="button" class="m-list-btn danger" data-act="delete-sheet"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-trash"/></svg>Delete sheet</button>
+        <button type="button" class="m-list-btn danger" data-command="reset-data" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-x-circle"/></svg>Reset saved data</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom navigation -->
+  <nav id="mBar" class="m-bar" role="tablist" aria-label="Spreadsheet navigation">
+    <button type="button" class="m-tab" role="tab" data-home aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-grid"/></svg><span>Sheet</span></button>
+    <button type="button" class="m-tab" role="tab" data-panel="format" aria-selected="false" aria-controls="mSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-type"/></svg><span>Format</span></button>
+    <button type="button" class="m-tab" role="tab" data-panel="cells" aria-selected="false" aria-controls="mSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-layout"/></svg><span>Cells</span></button>
+    <button type="button" class="m-tab" role="tab" data-panel="data" aria-selected="false" aria-controls="mSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-database"/></svg><span>Data</span></button>
+    <button type="button" class="m-tab" role="tab" data-panel="more" aria-selected="false" aria-controls="mSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-dots"/></svg><span>More</span></button>
   </nav>
-
-  <!-- Mobile toolbar drawer (slide-up) -->
-  <div id="mobileToolbarDrawer" class="mobile-toolbar-drawer" aria-label="Mobile toolbar" role="toolbar">
-    <div class="mobile-toolbar-drawer-handle"></div>
-    <div class="mobile-toolbar-drawer-inner" id="mobileToolbarInner">
-      <!-- JS will clone toolbar tools here for mobile -->
-    </div>
-  </div>
 
   <div id="liveRegion" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
+<script src="mobile.js"></script>
   <script>
-  (function() {
-    var drawer = document.getElementById('mobileToolbarDrawer');
-    var drawerInner = document.getElementById('mobileToolbarInner');
-    var toolbar = document.getElementById('toolbar');
-    var drawerOpen = false;
-
-    function populateDrawer() {
-      if (drawerInner && drawerInner.children.length) return;
-      if (!toolbar || !drawerInner) return;
-      var clone = toolbar.cloneNode(true);
-      Array.from(clone.children).forEach(function(c) {
-        c.style.display = '';
-        c.style.width = '100%';
-        drawerInner.appendChild(c);
-
-        c.querySelectorAll('[id]').forEach(function(control) {
-          var controlId = control.id;
-          control.removeAttribute('id');
-          var source = document.getElementById(controlId);
-          if (!source) return;
-          if (!control.matches('button[data-action], button[data-command]')) {
-            control.addEventListener('click', function() { source.click(); });
-          }
-          control.addEventListener('change', function() {
-            if ('checked' in control) source.checked = control.checked;
-            if ('value' in control) source.value = control.value;
-            source.dispatchEvent(new Event('change', { bubbles: true }));
-          });
-        });
-
-        c.querySelectorAll('[data-action], [data-command]').forEach(function(control) {
-          var selector = control.dataset.action
-            ? '[data-action="' + control.dataset.action + '"]'
-            : '[data-command="' + control.dataset.command + '"]';
-          var source = toolbar.querySelector(selector);
-          if (source && source !== control) {
-            control.addEventListener('click', function() { source.click(); });
-          }
-        });
-      });
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
     }
-
-    function toggleDrawer(force) {
-      drawerOpen = (force !== undefined) ? force : !drawerOpen;
-      if (drawerOpen) populateDrawer();
-      if (drawer) drawer.classList.toggle('open', drawerOpen);
-      var formatBtn = document.getElementById('mobileTabFormat');
-      if (formatBtn) formatBtn.classList.toggle('active', drawerOpen);
-    }
-
-    function syncDrawerTab(tab) {
-      if (!drawerInner) return;
-      drawerInner.querySelectorAll('.tool-group[data-ribbon]').forEach(function(group) {
-        var ribbons = String(group.getAttribute('data-ribbon') || 'home').split(/\s+/);
-        group.classList.toggle('ribbon-hidden', ribbons.indexOf(tab) === -1 && ribbons.indexOf('all') === -1);
-      });
-    }
-
-    var formatTab = document.getElementById('mobileTabFormat');
-    if (formatTab) formatTab.addEventListener('click', function() { toggleDrawer(); });
-
-    document.addEventListener('pointerdown', function(e) {
-      if (drawerOpen && drawer && !drawer.contains(e.target) && !e.target.closest('#mobileTabFormat')) {
-        toggleDrawer(false);
-      }
-    });
-
-    var handle = drawer && drawer.querySelector('.mobile-toolbar-drawer-handle');
-    if (handle) {
-      var startY = 0;
-      handle.addEventListener('touchstart', function(e) { startY = e.touches[0].clientY; }, {passive:true});
-      handle.addEventListener('touchend', function(e) {
-        if (e.changedTouches[0].clientY - startY > 40) toggleDrawer(false);
-      }, {passive:true});
-    }
-
-    document.querySelectorAll('[data-ribbon-tab-mobile]').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var tab = this.getAttribute('data-ribbon-tab-mobile');
-        var rt = document.querySelector('[data-ribbon-tab="' + tab + '"]');
-        if (rt) rt.click();
-        toggleDrawer(true);
-        syncDrawerTab(tab);
-        document.querySelectorAll('.mobile-bottom-tab').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-      });
-    });
-
-    var homeTab = document.getElementById('mobileTabHome');
-    if (homeTab) {
-      homeTab.addEventListener('click', function() {
-        var rt = document.querySelector('[data-ribbon-tab="home"]');
-        if (rt) rt.click();
-        document.querySelectorAll('.mobile-bottom-tab').forEach(function(b) { b.classList.remove('active'); });
-        homeTab.classList.add('active');
-        toggleDrawer(false);
-      });
-    }
-  })();
   </script>
 </body>
 </html>

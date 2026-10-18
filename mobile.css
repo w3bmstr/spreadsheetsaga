@@ -1,0 +1,1052 @@
+/* =========================================================
+   SpreadSheetSaga - Mobile experience
+   Applies on phones (<=767px wide) and on landscape phones
+   (short + touch). Desktop / tablet layout is untouched.
+   Keep the media query below in sync with MOBILE_QUERY in
+   app.js and mobile.js.
+   ========================================================= */
+
+/* Elements that only exist for the mobile layout */
+.m-only,
+.m-bar,
+.m-sheet,
+.m-hint {
+  display: none;
+}
+
+@media (max-width: 767px), (max-height: 500px) and (pointer: coarse) {
+  :root {
+    --app-h: 100dvh;
+    --app-top: 0px;
+    --bar-h: 56px;
+    --sheet-h: 0px;
+    --tabs-h: 46px;
+    --sb: env(safe-area-inset-bottom, 0px);
+    --st: env(safe-area-inset-top, 0px);
+    --sl: env(safe-area-inset-left, 0px);
+    --sr: env(safe-area-inset-right, 0px);
+    --m-ink: #0f172a;
+    --m-muted: #64748b;
+    --m-muted-2: #475569;
+    --m-sub: #94a3b8;
+    --m-line: #dbe3ee;
+    --m-line-2: #d5dfec;
+    --m-accent: #0f766e;
+    --m-accent-ink: #0b5f56;
+    --m-accent-soft: #e6f7f3;
+    --m-surface: #ffffff;
+    --m-surface-2: #f1f5f9;
+    --m-press: #e8eef7;
+    --m-bar-bg: rgba(255, 255, 255, 0.97);
+    --m-handle: #cbd5e1;
+    --m-danger: #b91c1c;
+    --m-shadow: rgba(15, 23, 42, 0.16);
+    color-scheme: light dark;
+  }
+
+  .m-only { display: revert; }
+
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background: var(--m-surface);
+  }
+
+  body {
+    padding: 0;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* ---------- App shell: edge-to-edge, fills the real visible viewport ---------- */
+  .app-shell {
+    position: fixed;
+    top: var(--app-top);
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    height: var(--app-h);
+    margin: 0;
+    padding: 0 var(--sr) calc(var(--bar-h) + var(--sb) + var(--sheet-h)) var(--sl);
+    gap: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    background: var(--m-surface);
+    animation: none;
+  }
+
+  .nav-shell { grid-row: 1; }
+  .grid-wrap { grid-row: 2; }
+  .sheet-controls { grid-row: 3; }
+  .workbook-statusbar { display: none; }
+
+  /* While typing: give the keyboard room, hide bottom chrome */
+  .kbd { --bar-h: 0px; }
+  .kbd .m-bar,
+  .kbd .sheet-controls { display: none; }
+
+  /* ---------- Top app bar ---------- */
+  .nav-shell {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    background: var(--m-surface);
+  }
+
+  .nav-upper {
+    min-height: 0;
+    height: calc(52px + var(--st));
+    padding: var(--st) 6px 0 14px;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .brand-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .brand-wrap > div { min-width: 0; }
+
+  .brand-badge {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    border-width: 0;
+    border-radius: 9px;
+    font-size: 0.78rem;
+    box-shadow: none;
+  }
+
+  .brand-wrap h1 {
+    font-size: 1rem;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .brand-wrap p { display: none; }
+
+  .brand-wrap p.m-sub {
+    display: block;
+    margin: 1px 0 0;
+    font: 500 0.7rem/1.2 "IBM Plex Mono", Consolas, monospace;
+    color: var(--m-sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar-meta,
+  .topbar-actions,
+  .nav-ribbon { display: none; }
+
+  .m-icon-btn,
+  .command-launch {
+    flex: 0 0 40px;
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #e2e8f0;
+    display: inline-grid;
+    place-items: center;
+    box-shadow: none;
+    transform: none;
+    cursor: pointer;
+  }
+
+  .command-launch > span { display: none; }
+
+  .command-launch:hover { transform: none; box-shadow: none; background: transparent; }
+
+  .m-icon-btn:active,
+  .command-launch:active { background: rgba(255, 255, 255, 0.16); }
+
+  .m-icon-btn:disabled { opacity: 0.35; }
+
+  .m-icon-btn svg,
+  .command-launch svg,
+  .m-tab svg,
+  .m-btn svg,
+  .m-list-btn svg,
+  .m-select-toggle svg,
+  .sheet-navigator .btn svg {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* ---------- Formula row (name box + formula on ONE line) ---------- */
+  .formula-wrap {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background: var(--m-surface-2);
+    border-top: 1px solid var(--m-line);
+    border-bottom: 1px solid var(--m-line);
+  }
+
+  .name-input {
+    min-height: 40px;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  .formula-highlight,
+  .formula-input {
+    min-height: 40px;
+    font-size: 16px;
+    padding: 9px 12px;
+    border-radius: 10px;
+  }
+
+  .m-select-toggle {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--m-line-2);
+    border-radius: 10px;
+    background: var(--m-surface);
+    color: var(--m-muted-2);
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .m-select-toggle[aria-pressed="true"] {
+    background: var(--m-accent);
+    border-color: var(--m-accent);
+    color: #ffffff;
+  }
+
+  /* ---------- Find bar ---------- */
+  .find-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    border-top: 1px solid var(--m-line);
+  }
+
+  .find-label { display: none; }
+
+  .find-bar .text-input {
+    flex: 1 1 100%;
+    max-width: none;
+    min-height: 40px;
+    font-size: 16px;
+  }
+
+  .find-count {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .find-bar .btn {
+    flex: 1 1 auto;
+    min-height: 40px;
+  }
+
+  /* ---------- The grid: the hero ---------- */
+  .grid-wrap {
+    height: auto;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
+    scroll-padding: 34px 48px;
+  }
+
+  .sheet-table { min-width: 0; }
+
+  .sheet-table td {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .sheet-table td.active { outline-width: 2.5px; }
+
+  /* Big, friendly drag handle (fill / extend) with a generous hit area */
+  .fill-handle {
+    width: 14px;
+    height: 14px;
+    margin: 0 0 0 1px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.4);
+    touch-action: none;
+  }
+
+  .fill-handle::before {
+    content: "";
+    position: absolute;
+    inset: -16px;
+  }
+
+  .m-select-mode .grid-wrap { touch-action: none; }
+
+  .m-hint {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--bar-h) + var(--sb) + var(--sheet-h) + var(--tabs-h) + 12px);
+    z-index: 95;
+    transform: translateX(-50%);
+    max-width: calc(100% - 24px);
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.92);
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.3);
+    align-items: center;
+    gap: 10px;
+  }
+
+  .m-hint:not([hidden]) { display: inline-flex; }
+
+  .m-hint button {
+    border: 0;
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    font: inherit;
+    border-radius: 999px;
+    padding: 3px 10px;
+  }
+
+  /* ---------- Sheet tabs (bottom, like Excel / Sheets mobile) ---------- */
+  .sheet-controls {
+    position: relative;
+    height: var(--tabs-h);
+    padding: 0;
+    border: 0;
+    border-top: 1px solid var(--m-line);
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--m-surface-2);
+    display: block;
+  }
+
+  .sheet-controls-main {
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0;
+  }
+
+  .sheet-grid-actions { display: none; }
+
+  .sheet-navigator {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    margin: 0;
+    flex-wrap: nowrap;
+    gap: 0;
+    justify-content: flex-start;
+  }
+
+  .sheet-tabs {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+    height: 100%;
+    padding: 0 6px;
+    gap: 2px;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+  }
+
+  .sheet-tabs::-webkit-scrollbar { display: none; }
+
+  .sheet-tab {
+    flex: 0 0 auto;
+    height: 40px;
+    min-width: 56px;
+    justify-content: center;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--m-muted-2);
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .sheet-tab:hover { transform: none; }
+
+  .sheet-tab.active {
+    background: var(--m-surface);
+    color: var(--m-accent);
+    box-shadow: inset 0 -3px 0 var(--m-accent), 0 1px 3px rgba(15, 23, 42, 0.12);
+  }
+
+  .sheet-tab button {
+    display: none;
+    width: 22px;
+    height: 22px;
+    margin-left: 2px;
+    border-radius: 50%;
+    font-size: 0.8rem;
+  }
+
+  .sheet-tab.active button { display: inline-grid; place-items: center; }
+
+  .sheet-navigator .btn {
+    flex: 0 0 auto;
+    width: 46px;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--m-line);
+    border-radius: 0;
+    background: transparent;
+    color: var(--m-muted-2);
+    display: inline-grid;
+    place-items: center;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .sheet-navigator #addSheetBtn { color: var(--m-accent); }
+  .sheet-navigator .btn .lbl { display: none; }
+  .sheet-navigator .btn:active { background: var(--m-press); }
+
+  .sheet-menu-panel {
+    position: fixed;
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: calc(var(--bar-h) + var(--sb) + var(--sheet-h) + var(--tabs-h) + 8px);
+    z-index: 125;
+    width: auto;
+    max-width: none;
+    max-height: 45dvh;
+    padding: 8px;
+    border-radius: 16px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.25);
+  }
+
+  .sheet-menu-item {
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+
+  /* ---------- Bottom navigation ---------- */
+  .m-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 130;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    height: calc(var(--bar-h) + var(--sb));
+    padding: 0 max(4px, var(--sr)) var(--sb) max(4px, var(--sl));
+    background: var(--m-bar-bg);
+    border-top: 1px solid var(--m-line);
+    -webkit-backdrop-filter: saturate(1.4) blur(16px);
+    backdrop-filter: saturate(1.4) blur(16px);
+  }
+
+  .m-tab {
+    position: relative;
+    min-height: 48px;
+    margin: 4px 2px;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--m-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font: 600 0.68rem/1 "Space Grotesk", "Segoe UI", sans-serif;
+    transition: color 120ms ease, background 120ms ease;
+  }
+
+  .m-tab:active { background: var(--m-press); }
+
+  .m-tab[aria-selected="true"] { color: var(--m-accent); }
+
+  .m-tab[aria-selected="true"]::before {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: 28%;
+    right: 28%;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--m-accent);
+  }
+
+  /* ---------- Docked bottom sheet (tools stay usable while you pick cells) ---------- */
+  .m-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--bar-h) + var(--sb));
+    z-index: 120;
+    display: flex;
+    flex-direction: column;
+    max-height: min(46dvh, 380px);
+    background: var(--m-surface);
+    border-top: 1px solid var(--m-line);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.16);
+    transform: translateY(110%);
+    visibility: hidden;
+    transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 240ms;
+    padding: 0 var(--sr) 0 var(--sl);
+  }
+
+  .m-sheet.open {
+    transform: none;
+    visibility: visible;
+    transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s;
+  }
+
+  .kbd .m-sheet { bottom: 0; }
+
+  .m-sheet-grab {
+    flex: 0 0 auto;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .m-sheet-grab::before {
+    content: "";
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--m-handle);
+  }
+
+  .m-sheet-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px 0 16px;
+  }
+
+  .m-sheet-head h2 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--m-ink);
+  }
+
+  .m-sheet-head .m-icon-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    flex-basis: 40px;
+    color: var(--m-muted-2);
+  }
+
+  .m-sheet-head .m-icon-btn:active { background: var(--m-press); }
+
+  .m-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 0 14px 12px;
+  }
+
+  .m-panel[hidden] { display: none; }
+
+  .m-title {
+    margin: 12px 2px 6px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+  }
+
+  .m-title:first-child { margin-top: 4px; }
+
+  .m-row { display: flex; gap: 8px; }
+  .m-row > * { flex: 1 1 0; min-width: 0; }
+  .m-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .m-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .m-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .m-grid-2,
+  .m-grid-3,
+  .m-grid-4,
+  .m-row { margin-bottom: 8px; }
+
+  .m-btn {
+    min-height: 46px;
+    padding: 0 10px;
+    border: 1px solid var(--m-line-2);
+    border-radius: 12px;
+    background: var(--m-surface);
+    color: var(--m-ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font: 600 0.88rem/1.1 "Space Grotesk", "Segoe UI", sans-serif;
+    text-align: center;
+    transition: background 100ms ease;
+  }
+
+  .m-btn:active { background: var(--m-press); }
+
+  .m-btn[aria-pressed="true"] {
+    background: var(--m-accent-soft);
+    border-color: var(--m-accent);
+    color: var(--m-accent-ink);
+  }
+
+  .m-btn.danger { color: var(--m-danger); }
+
+  .m-btn.stack {
+    flex-direction: column;
+    gap: 4px;
+    min-height: 54px;
+    padding: 4px;
+    font-size: 0.72rem;
+  }
+
+  /* Joined button group (B / I / U, align) */
+  .m-seg {
+    display: flex;
+    border: 1px solid var(--m-line-2);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--m-surface);
+  }
+
+  .m-seg .m-btn {
+    flex: 1 1 0;
+    border: 0;
+    border-radius: 0;
+    border-right: 1px solid var(--m-line);
+  }
+
+  .m-seg .m-btn:last-child { border-right: 0; }
+
+  .m-field {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--m-muted);
+  }
+
+  .m-field select,
+  .m-field input[type="text"],
+  .m-field input[type="number"] {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 12px;
+    border: 1px solid var(--m-line-2);
+    border-radius: 12px;
+    background: var(--m-surface);
+    color: var(--m-ink);
+    font: 500 16px "Space Grotesk", "Segoe UI", sans-serif;
+  }
+
+  .m-color {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 46px;
+    padding: 0 12px;
+    border: 1px solid var(--m-line-2);
+    border-radius: 12px;
+    background: var(--m-surface);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--m-ink);
+  }
+
+  .m-color input[type="color"] {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+  }
+
+  .m-switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 46px;
+    padding: 0 12px;
+    border: 1px solid var(--m-line-2);
+    border-radius: 12px;
+    background: var(--m-surface);
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .m-switch input {
+    width: 22px;
+    height: 22px;
+    accent-color: var(--m-accent);
+  }
+
+  .m-list {
+    margin-bottom: 8px;
+    border: 1px solid var(--m-line-2);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--m-surface);
+  }
+
+  .m-list-btn {
+    width: 100%;
+    min-height: 50px;
+    padding: 0 14px;
+    border: 0;
+    border-bottom: 1px solid var(--m-line);
+    background: var(--m-surface);
+    color: var(--m-ink);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+    font: 600 0.92rem "Space Grotesk", "Segoe UI", sans-serif;
+  }
+
+  .m-list-btn:last-child { border-bottom: 0; }
+  .m-list-btn:active { background: var(--m-press); }
+  .m-list-btn svg { color: var(--m-muted-2); }
+  .m-list-btn.danger,
+  .m-list-btn.danger svg { color: var(--m-danger); }
+
+  /* ---------- Context menu -> action sheet ---------- */
+  .context-menu {
+    position: fixed;
+    left: 8px !important;
+    right: 8px;
+    top: auto !important;
+    bottom: calc(var(--bar-h) + var(--sb) + 8px);
+    z-index: 140;
+    padding: 6px;
+    border: 0;
+    border-radius: 18px;
+    box-shadow: 0 16px 44px rgba(15, 23, 42, 0.32);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+
+  .context-menu[hidden] { display: none; }
+
+  .context-menu button {
+    padding: 14px 12px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  /* ---------- Modals -> bottom sheets ---------- */
+  .modal {
+    inset: auto;
+    top: var(--app-top);
+    left: 0;
+    right: 0;
+    height: var(--app-h);
+    place-items: end stretch;
+    z-index: 150;
+  }
+
+  .modal-content {
+    width: 100%;
+    max-width: none;
+    max-height: calc(var(--app-h) - 28px);
+    overflow: auto;
+    padding: 14px 14px calc(14px + var(--sb));
+    border: 0;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .modal-head .btn { min-height: 40px; }
+  .modal-row { flex-wrap: wrap; }
+
+  #commandPaletteModal { place-items: start stretch; }
+
+  #commandPaletteModal .modal-content {
+    padding-top: calc(14px + var(--st));
+    border-radius: 0 0 20px 20px;
+  }
+
+  .command-palette-input {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .command-palette-list { max-height: calc(var(--app-h) - 200px); }
+
+  .command-palette-item {
+    min-height: 50px;
+    padding: 12px;
+  }
+
+  .command-palette-shortcut { display: none; }
+
+
+  /* iOS zooms the page when an editable field is under 16px: make in-cell editing 16px */
+  .sheet-table td[contenteditable="true"]:focus {
+    font-size: 16px !important;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  .grid-wrap { color-scheme: light; }
+
+  .m-tip {
+    margin-left: 6px;
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--m-sub);
+  }
+
+  /* ---------- Confirm / cancel while editing in the formula bar ---------- */
+  .m-edit-actions { display: none; gap: 6px; }
+
+  .m-formula-editing .m-edit-actions { display: inline-flex; }
+  .m-formula-editing #mSelectBtn { display: none; }
+
+  .m-edit-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    display: inline-grid;
+    place-items: center;
+    color: #ffffff;
+  }
+
+  .m-edit-btn svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .m-edit-btn.cancel { background: #64748b; }
+  .m-edit-btn.commit { background: var(--m-accent); }
+  .m-edit-btn:active { filter: brightness(0.9); }
+
+  /* ---------- Toast feedback ---------- */
+  .m-toast {
+    position: fixed;
+    top: calc(var(--app-top) + var(--st) + 116px);
+    left: 50%;
+    z-index: 160;
+    max-width: calc(100% - 32px);
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.94);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -8px);
+    transition: opacity 160ms ease, transform 160ms ease;
+  }
+
+  .m-toast.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  /* ---------- Dark theme (chrome only; the sheet "paper" stays light) ---------- */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --m-ink: #e6edf7;
+      --m-muted: #94a3b8;
+      --m-muted-2: #b6c3d6;
+      --m-sub: #7f8ea6;
+      --m-line: #263244;
+      --m-line-2: #334155;
+      --m-accent: #2dd4bf;
+      --m-accent-ink: #5eead4;
+      --m-accent-soft: rgba(45, 212, 191, 0.14);
+      --m-surface: #111827;
+      --m-surface-2: #0b1220;
+      --m-press: #1f2a3d;
+      --m-bar-bg: rgba(11, 18, 32, 0.96);
+      --m-handle: #475569;
+      --m-danger: #f87171;
+      --m-shadow: rgba(0, 0, 0, 0.5);
+    }
+
+    body,
+    .app-shell,
+    .nav-shell { background: var(--m-surface-2); }
+
+    .nav-upper { background: #0b1220; }
+
+    .formula-wrap { border-color: var(--m-line); }
+
+    .name-input {
+      background: var(--m-surface);
+      border-color: var(--m-line-2);
+      color: var(--m-ink);
+    }
+
+    .formula-highlight {
+      background: var(--m-surface);
+      color: var(--m-ink);
+      border-color: var(--m-line-2);
+    }
+
+    .formula-highlight .fx { color: #7db4ff; }
+    .formula-highlight .ref { color: #c4a8ff; }
+
+    .formula-input {
+      border-color: var(--m-line-2);
+      caret-color: var(--m-ink);
+    }
+
+    .m-select-toggle { color: var(--m-muted-2); }
+
+    .find-bar,
+    .sheet-menu-panel,
+    .context-menu,
+    .modal-content {
+      background: var(--m-surface);
+      color: var(--m-ink);
+    }
+
+    .find-bar { border-color: var(--m-line); }
+
+    .text-input,
+    .select {
+      background: var(--m-surface-2);
+      border-color: var(--m-line-2);
+      color: var(--m-ink);
+    }
+
+    .btn.ghost,
+    .sheet-menu-item.btn {
+      background: var(--m-surface-2);
+      border-color: var(--m-line-2);
+      color: var(--m-ink);
+    }
+
+    .sheet-tab.active { box-shadow: inset 0 -3px 0 var(--m-accent); }
+
+    .sheet-tab.active button { color: #f87171; }
+
+    .context-menu button { color: var(--m-ink); }
+    .context-menu button:hover,
+    .context-menu button:active { background: var(--m-press); }
+
+    .command-palette-list {
+      border-color: var(--m-line-2);
+      background: var(--m-surface);
+    }
+
+    .command-palette-item {
+      background: var(--m-surface);
+      border-bottom-color: var(--m-line);
+      color: var(--m-ink);
+    }
+
+    .command-palette-item:hover,
+    .command-palette-item.active { background: var(--m-press); }
+
+    .self-fix-summary {
+      background: var(--m-surface-2);
+      border-color: var(--m-line-2);
+      color: var(--m-accent-ink);
+    }
+
+    .m-sheet { box-shadow: 0 -10px 30px var(--m-shadow); }
+    .m-color input[type="color"] { background: transparent; }
+    .m-field select { color-scheme: dark; }
+  }
+
+  /* ---------- Landscape phones: win back vertical space ---------- */
+  @media (max-height: 500px) {
+    :root {
+      --bar-h: 44px;
+      --tabs-h: 38px;
+    }
+
+    .nav-upper { height: calc(42px + var(--st)); }
+    .brand-wrap p.m-sub { display: none; }
+    .m-tab { flex-direction: row; gap: 6px; min-height: 36px; margin: 4px 2px; }
+    .m-tab svg { width: 20px; height: 20px; }
+    .formula-wrap { padding: 4px 8px; }
+    /* Not enough height to shrink the grid: float the panel over it instead */
+    .app-shell { padding-bottom: calc(var(--bar-h) + var(--sb)); }
+    .m-sheet { max-height: 70dvh; }
+    .m-hint { bottom: calc(var(--bar-h) + var(--sb) + var(--tabs-h) + 12px); }
+    .sheet-tab { height: 30px; }
+  }
+
+  @media (min-height: 501px) and (max-height: 640px) {
+    .m-sheet { max-height: 36dvh; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .m-sheet,
+    .m-sheet.open,
+    .m-tab { transition: none; }
+
+    .sheet-tabs { scroll-behavior: auto; }
+  }
+}
